@@ -2,6 +2,12 @@ const SELECTED_CLASS_KEY = 'trpg:selected-class'
 const ABILITY_SCORES_KEY = 'trpg:ability-scores'
 const SELECTED_ITEMS_KEY = 'trpg:selected-items'
 const BACKGROUND_DATA_KEY = 'trpg:background-data'
+const STORY_SCENE_KEY = 'trpg:story-scene'
+const ACTIVE_ITEM_IDS_KEY = 'trpg:active-item-ids'
+const STORIES_KEY = 'trpg:stories'
+const PLAYER_ACTION_KEY = 'trpg:player-action'
+const JUDGE_RESULT_KEY = 'trpg:judge-result'
+const DICE_ROLL_KEY = 'trpg:dice-roll'
 
 export type AbilityScores = {
   strength: number
@@ -22,6 +28,19 @@ export type SelectedItem = {
 export type BackgroundData = {
   intro_title: string
   intro_text: string
+}
+
+export type StoryScene = {
+  scene_title: string
+  scene_text: string
+}
+
+export type JudgeResult = {
+  needs_roll: boolean
+  ability: string | null
+  skill: string | null
+  difficulty: number | null
+  message: string
 }
 
 export const defaultAbilityScores: AbilityScores = {
@@ -126,4 +145,147 @@ export function getStoredBackgroundData() {
 
 export function setStoredBackgroundData(backgroundData: BackgroundData) {
   window.localStorage.setItem(BACKGROUND_DATA_KEY, JSON.stringify(backgroundData))
+}
+
+export function getStoredStoryScene() {
+  const rawValue = window.localStorage.getItem(STORY_SCENE_KEY)
+
+  if (!rawValue) {
+    return null as StoryScene | null
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue)
+
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      typeof parsed.scene_title === 'string' &&
+      typeof parsed.scene_text === 'string'
+    ) {
+      return parsed as StoryScene
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
+
+export function setStoredStoryScene(storyScene: StoryScene) {
+  window.localStorage.setItem(STORY_SCENE_KEY, JSON.stringify(storyScene))
+}
+
+export function getStoredStories() {
+  const rawValue = window.localStorage.getItem(STORIES_KEY)
+
+  if (!rawValue) {
+    return [] as StoryScene[]
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue)
+
+    if (!Array.isArray(parsed)) {
+      return []
+    }
+
+    return parsed.filter(
+      (item): item is StoryScene =>
+        typeof item === 'object' &&
+        item !== null &&
+        typeof item.scene_title === 'string' &&
+        typeof item.scene_text === 'string',
+    )
+  } catch {
+    return []
+  }
+}
+
+export function setStoredStories(stories: StoryScene[]) {
+  window.localStorage.setItem(STORIES_KEY, JSON.stringify(stories))
+}
+
+export function getStoredActiveItemIds() {
+  const rawValue = window.localStorage.getItem(ACTIVE_ITEM_IDS_KEY)
+
+  if (!rawValue) {
+    return [] as string[]
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue)
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export function setStoredActiveItemIds(itemIds: string[]) {
+  window.localStorage.setItem(ACTIVE_ITEM_IDS_KEY, JSON.stringify(itemIds))
+}
+
+export function getStoredPlayerAction() {
+  return window.localStorage.getItem(PLAYER_ACTION_KEY) ?? ''
+}
+
+export function setStoredPlayerAction(playerAction: string) {
+  window.localStorage.setItem(PLAYER_ACTION_KEY, playerAction)
+}
+
+export function getStoredJudgeResult() {
+  const rawValue = window.localStorage.getItem(JUDGE_RESULT_KEY)
+
+  if (!rawValue) {
+    return null as JudgeResult | null
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue)
+
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      typeof parsed.needs_roll === 'boolean' &&
+      typeof parsed.message === 'string' &&
+      (typeof parsed.ability === 'string' || parsed.ability === null) &&
+      (typeof parsed.skill === 'string' || parsed.skill === null) &&
+      (typeof parsed.difficulty === 'number' || parsed.difficulty === null)
+    ) {
+      return parsed as JudgeResult
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
+
+export function setStoredJudgeResult(judgeResult: JudgeResult | null) {
+  if (judgeResult === null) {
+    window.localStorage.removeItem(JUDGE_RESULT_KEY)
+    return
+  }
+
+  window.localStorage.setItem(JUDGE_RESULT_KEY, JSON.stringify(judgeResult))
+}
+
+export function getStoredDiceRoll() {
+  const rawValue = window.localStorage.getItem(DICE_ROLL_KEY)
+
+  if (!rawValue) {
+    return null as number | null
+  }
+
+  const parsed = Number(rawValue)
+  return Number.isInteger(parsed) ? parsed : null
+}
+
+export function setStoredDiceRoll(diceRoll: number | null) {
+  if (diceRoll === null) {
+    window.localStorage.removeItem(DICE_ROLL_KEY)
+    return
+  }
+
+  window.localStorage.setItem(DICE_ROLL_KEY, String(diceRoll))
 }
