@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import startPrompt from '../assets/01_start.md?raw'
 import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
 import {
   clearAllStoredGameData,
-  createEmptyStoryTurn,
+  createEmptyStorySceneState,
   getStoredAbilityScores,
   getStoredBackgroundData,
   getStoredBackgroundSelection,
   getStoredClassId,
   setStoredBackgroundData,
   setStoredBackgroundSelection,
-  setStoredStoryTurn,
+  setStoredStorySceneState,
   type SelectedItem,
   setStoredSelectedItems,
 } from '../lib/character-storage'
@@ -224,9 +224,9 @@ export function BackgroundPage() {
     )
 
     setStoredSelectedItems(selectedItems)
-    setStoredStoryTurn({
-      ...createEmptyStoryTurn(0),
-      turnNumber: 0,
+    setStoredStorySceneState({
+      ...createEmptyStorySceneState(0),
+      sceneNumber: 0,
       items: selectedItems,
     })
     navigate('/story')

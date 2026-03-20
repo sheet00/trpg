@@ -9,7 +9,7 @@ const STORIES_KEY = 'trpg:stories'
 const PLAYER_ACTION_KEY = 'trpg:player-action'
 const JUDGE_RESULT_KEY = 'trpg:judge-result'
 const DICE_ROLL_KEY = 'trpg:dice-roll'
-const STORY_TURNS_KEY = 'trpg:story-turns'
+const STORY_SCENES_KEY = 'trpg:story-scenes'
 const STORAGE_KEYS = [
   SELECTED_CLASS_KEY,
   ABILITY_SCORES_KEY,
@@ -22,7 +22,7 @@ const STORAGE_KEYS = [
   PLAYER_ACTION_KEY,
   JUDGE_RESULT_KEY,
   DICE_ROLL_KEY,
-  STORY_TURNS_KEY,
+  STORY_SCENES_KEY,
 ] as const
 
 export type AbilityScores = {
@@ -60,8 +60,8 @@ export type JudgeResult = {
   message: string
 }
 
-export type StoryTurn = {
-  turnNumber: number
+export type StorySceneState = {
+  sceneNumber: number
   scene: StoryScene | null
   items: SelectedItem[]
   activeItemIds: string[]
@@ -375,9 +375,9 @@ function isJudgeResult(value: unknown): value is JudgeResult {
   )
 }
 
-export function createEmptyStoryTurn(turnNumber: number): StoryTurn {
+export function createEmptyStorySceneState(sceneNumber: number): StorySceneState {
   return {
-    turnNumber,
+    sceneNumber,
     scene: null,
     items: [],
     activeItemIds: [],
@@ -387,11 +387,11 @@ export function createEmptyStoryTurn(turnNumber: number): StoryTurn {
   }
 }
 
-export function getStoredStoryTurns() {
-  const rawValue = window.localStorage.getItem(STORY_TURNS_KEY)
+export function getStoredStorySceneStates() {
+  const rawValue = window.localStorage.getItem(STORY_SCENES_KEY)
 
   if (!rawValue) {
-    return [] as StoryTurn[]
+    return [] as StorySceneState[]
   }
 
   try {
@@ -403,10 +403,10 @@ export function getStoredStoryTurns() {
 
     return parsed
       .filter(
-        (item): item is StoryTurn =>
+        (item): item is StorySceneState =>
           typeof item === 'object' &&
           item !== null &&
-          typeof item.turnNumber === 'number' &&
+          typeof item.sceneNumber === 'number' &&
           (item.scene === null || isStoryScene(item.scene)) &&
           Array.isArray(item.items) &&
           item.items.every(
@@ -424,40 +424,46 @@ export function getStoredStoryTurns() {
           (item.judgeResult === null || isJudgeResult(item.judgeResult)) &&
           (typeof item.diceRoll === 'number' || item.diceRoll === null),
       )
-      .sort((left, right) => left.turnNumber - right.turnNumber)
+      .sort((left, right) => left.sceneNumber - right.sceneNumber)
   } catch {
     return []
   }
 }
 
-export function setStoredStoryTurns(turns: StoryTurn[]) {
-  window.localStorage.setItem(STORY_TURNS_KEY, JSON.stringify(turns))
+export function setStoredStorySceneStates(sceneStates: StorySceneState[]) {
+  window.localStorage.setItem(STORY_SCENES_KEY, JSON.stringify(sceneStates))
 }
 
-export function getStoredStoryTurn(turnNumber: number) {
+export function getStoredStorySceneState(sceneNumber: number) {
   return (
-    getStoredStoryTurns().find((turn) => turn.turnNumber === turnNumber) ??
-    createEmptyStoryTurn(turnNumber)
+    getStoredStorySceneStates().find((sceneState) => sceneState.sceneNumber === sceneNumber) ??
+    createEmptyStorySceneState(sceneNumber)
   )
 }
 
-export function setStoredStoryTurn(turn: StoryTurn) {
-  const turns = getStoredStoryTurns()
-  const existingIndex = turns.findIndex((storedTurn) => storedTurn.turnNumber === turn.turnNumber)
+export function setStoredStorySceneState(sceneState: StorySceneState) {
+  const sceneStates = getStoredStorySceneStates()
+  const existingIndex = sceneStates.findIndex(
+    (storedSceneState) => storedSceneState.sceneNumber === sceneState.sceneNumber,
+  )
 
   if (existingIndex === -1) {
-    setStoredStoryTurns([...turns, turn].sort((left, right) => left.turnNumber - right.turnNumber))
+    setStoredStorySceneStates(
+      [...sceneStates, sceneState].sort((left, right) => left.sceneNumber - right.sceneNumber),
+    )
     return
   }
 
-  const nextTurns = [...turns]
-  nextTurns[existingIndex] = turn
-  setStoredStoryTurns(nextTurns)
+  const nextSceneStates = [...sceneStates]
+  nextSceneStates[existingIndex] = sceneState
+  setStoredStorySceneStates(nextSceneStates)
 }
 
-export function clearStoredStoryTurnsAfter(turnNumber: number) {
-  const turns = getStoredStoryTurns().filter((turn) => turn.turnNumber <= turnNumber)
-  setStoredStoryTurns(turns)
+export function clearStoredStorySceneStatesAfter(sceneNumber: number) {
+  const sceneStates = getStoredStorySceneStates().filter(
+    (sceneState) => sceneState.sceneNumber <= sceneNumber,
+  )
+  setStoredStorySceneStates(sceneStates)
 }
 
 export function clearAllStoredGameData() {

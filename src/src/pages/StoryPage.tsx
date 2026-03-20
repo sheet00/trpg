@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import gmPrompt from '../assets/02_gm.md?raw'
 import continueGmPrompt from '../assets/04_gm.md?raw'
 import judgePrompt from '../assets/03_judge.md?raw'
 import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
 import {
-  clearStoredStoryTurnsAfter,
+  clearStoredStorySceneStatesAfter,
   clearAllStoredGameData,
-  createEmptyStoryTurn,
+  createEmptyStorySceneState,
   getStoredActiveItemIds,
   getStoredBackgroundData,
   getStoredAbilityScores,
@@ -18,19 +18,19 @@ import {
   getStoredPlayerAction,
   getStoredSelectedItems,
   getStoredStoryScene,
-  getStoredStoryTurn,
-  getStoredStoryTurns,
+  getStoredStorySceneState,
+  getStoredStorySceneStates,
   setStoredActiveItemIds,
   setStoredDiceRoll,
   setStoredJudgeResult,
   setStoredPlayerAction,
   setStoredStoryScene,
-  setStoredStoryTurn,
+  setStoredStorySceneState,
   setStoredStories,
   type JudgeResult,
   type SelectedItem,
   type StoryScene,
-  type StoryTurn,
+  type StorySceneState,
 } from '../lib/character-storage'
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
@@ -112,31 +112,31 @@ function getAbilityModifier(ability: string | null) {
   }
 }
 
-function getTurnOutcome(turn: StoryTurn) {
-  if (!turn.judgeResult?.needs_roll) {
-    return turn.judgeResult ? '判定不要' : null
+function getSceneOutcome(sceneState: StorySceneState) {
+  if (!sceneState.judgeResult?.needs_roll) {
+    return sceneState.judgeResult ? '判定不要' : null
   }
 
-  if (turn.diceRoll === null || turn.judgeResult.difficulty === null) {
+  if (sceneState.diceRoll === null || sceneState.judgeResult.difficulty === null) {
     return null
   }
 
-  const modifier = getAbilityModifier(turn.judgeResult.ability)
-  const total = turn.diceRoll + modifier
+  const modifier = getAbilityModifier(sceneState.judgeResult.ability)
+  const total = sceneState.diceRoll + modifier
 
-  return total >= turn.judgeResult.difficulty ? '成功' : '失敗'
+  return total >= sceneState.judgeResult.difficulty ? '成功' : '失敗'
 }
 
-function getTurnResolution(turn: StoryTurn) {
-  if (!turn.judgeResult) {
+function getSceneResolution(sceneState: StorySceneState) {
+  if (!sceneState.judgeResult) {
     return null
   }
 
-  const outcome = getTurnOutcome(turn)
+  const outcome = getSceneOutcome(sceneState)
 
   return {
     result: outcome,
-    summary: turn.judgeResult.message,
+    summary: sceneState.judgeResult.message,
   }
 }
 
@@ -147,14 +147,14 @@ export function StoryPage() {
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
   const backgroundData = getStoredBackgroundData()
   const abilityRows = getAbilityRows()
-  const turnFromSearchParams = Number(searchParams.get('turn') ?? '1')
-  const currentTurnNumber =
-    Number.isInteger(turnFromSearchParams) && turnFromSearchParams > 0 ? turnFromSearchParams : 1
+  const sceneFromSearchParams = Number(searchParams.get('scene') ?? searchParams.get('turn') ?? '1')
+  const currentSceneNumber =
+    Number.isInteger(sceneFromSearchParams) && sceneFromSearchParams > 0 ? sceneFromSearchParams : 1
   const [generatedScene, setGeneratedScene] = useState<StoryScene | null>(null)
   const [judgeResult, setJudgeResult] = useState<JudgeResult | null>(null)
   const [diceRoll, setDiceRoll] = useState<number | null>(null)
   const [rollingValue, setRollingValue] = useState<number>(1)
-  const [turnItems, setTurnItems] = useState<SelectedItem[]>([])
+  const [sceneItems, setSceneItems] = useState<SelectedItem[]>([])
   const [activeItemIds, setActiveItemIdsState] = useState<string[]>([])
   const [playerAction, setPlayerActionState] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
@@ -166,34 +166,34 @@ export function StoryPage() {
   }
 
   const availableActiveItemIds = activeItemIds.filter((itemId) =>
-    turnItems.some((item) => item.id === itemId),
+    sceneItems.some((item) => item.id === itemId),
   )
-  const activeItems = turnItems.filter((item) =>
+  const activeItems = sceneItems.filter((item) =>
     availableActiveItemIds.includes(item.id),
   )
   const isRolling = judgeResult?.needs_roll === true && diceRoll === null
 
   useEffect(() => {
-    if (searchParams.get('turn') === String(currentTurnNumber)) {
+    if (searchParams.get('scene') === String(currentSceneNumber)) {
       return
     }
 
-    setSearchParams({ turn: String(currentTurnNumber) }, { replace: true })
-  }, [currentTurnNumber, searchParams, setSearchParams])
+    setSearchParams({ scene: String(currentSceneNumber) }, { replace: true })
+  }, [currentSceneNumber, searchParams, setSearchParams])
 
   useEffect(() => {
-    let storedTurn = getStoredStoryTurn(currentTurnNumber)
+    let storedSceneState = getStoredStorySceneState(currentSceneNumber)
 
     if (
-      currentTurnNumber === 1 &&
-      storedTurn.scene === null &&
-      storedTurn.activeItemIds.length === 0 &&
-      storedTurn.playerAction === '' &&
-      storedTurn.judgeResult === null &&
-      storedTurn.diceRoll === null
+      currentSceneNumber === 1 &&
+      storedSceneState.scene === null &&
+      storedSceneState.activeItemIds.length === 0 &&
+      storedSceneState.playerAction === '' &&
+      storedSceneState.judgeResult === null &&
+      storedSceneState.diceRoll === null
     ) {
-      const migratedTurn = {
-        turnNumber: 1,
+      const migratedSceneState = {
+        sceneNumber: 1,
         scene: getStoredStoryScene(),
         items: getStoredSelectedItems(),
         activeItemIds: getStoredActiveItemIds(),
@@ -203,59 +203,59 @@ export function StoryPage() {
       }
 
       const hasLegacyState =
-        migratedTurn.scene !== null ||
-        migratedTurn.items.length > 0 ||
-        migratedTurn.activeItemIds.length > 0 ||
-        migratedTurn.playerAction !== '' ||
-        migratedTurn.judgeResult !== null ||
-        migratedTurn.diceRoll !== null
+        migratedSceneState.scene !== null ||
+        migratedSceneState.items.length > 0 ||
+        migratedSceneState.activeItemIds.length > 0 ||
+        migratedSceneState.playerAction !== '' ||
+        migratedSceneState.judgeResult !== null ||
+        migratedSceneState.diceRoll !== null
 
       if (hasLegacyState) {
-        setStoredStoryTurn(migratedTurn)
-        storedTurn = migratedTurn
+        setStoredStorySceneState(migratedSceneState)
+        storedSceneState = migratedSceneState
       }
     }
 
-    if (storedTurn.items.length === 0 && currentTurnNumber > 0) {
-      const previousTurn = getStoredStoryTurn(currentTurnNumber - 1)
+    if (storedSceneState.items.length === 0 && currentSceneNumber > 0) {
+      const previousSceneState = getStoredStorySceneState(currentSceneNumber - 1)
 
-      if (previousTurn.items.length > 0) {
-        storedTurn = {
-          ...storedTurn,
-          items: previousTurn.items,
+      if (previousSceneState.items.length > 0) {
+        storedSceneState = {
+          ...storedSceneState,
+          items: previousSceneState.items,
         }
-        setStoredStoryTurn(storedTurn)
+        setStoredStorySceneState(storedSceneState)
       }
     }
 
-    setGeneratedScene(storedTurn.scene)
-    setTurnItems(storedTurn.items)
-    setJudgeResult(storedTurn.judgeResult)
-    setDiceRoll(storedTurn.diceRoll)
-    setActiveItemIdsState(storedTurn.activeItemIds)
-    setPlayerActionState(storedTurn.playerAction)
+    setGeneratedScene(storedSceneState.scene)
+    setSceneItems(storedSceneState.items)
+    setJudgeResult(storedSceneState.judgeResult)
+    setDiceRoll(storedSceneState.diceRoll)
+    setActiveItemIdsState(storedSceneState.activeItemIds)
+    setPlayerActionState(storedSceneState.playerAction)
     setErrorMessage('')
-  }, [currentTurnNumber])
+  }, [currentSceneNumber])
 
   useEffect(() => {
     document.title = generatedScene?.scene_title
-      ? `第${currentTurnNumber}章：${generatedScene.scene_title} | TRPG`
-      : `第${currentTurnNumber}章 | TRPG`
-  }, [currentTurnNumber, generatedScene?.scene_title])
+      ? `第${currentSceneNumber}シーン：${generatedScene.scene_title} | TRPG`
+      : `第${currentSceneNumber}シーン | TRPG`
+  }, [currentSceneNumber, generatedScene?.scene_title])
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })
-  }, [currentTurnNumber])
+  }, [currentSceneNumber])
 
   useEffect(() => {
-    const storedTurn = getStoredStoryTurn(currentTurnNumber)
+    const storedSceneState = getStoredStorySceneState(currentSceneNumber)
 
-    if (generatedScene || storedTurn.scene || isSceneLoading) {
+    if (generatedScene || storedSceneState.scene || isSceneLoading) {
       return
     }
 
     void handleGenerateScene()
-  }, [currentTurnNumber, generatedScene, isSceneLoading])
+  }, [currentSceneNumber, generatedScene, isSceneLoading])
 
   useEffect(() => {
     if (!isRolling) {
@@ -271,16 +271,16 @@ export function StoryPage() {
     }
   }, [isRolling])
 
-  const persistTurn = (updater: (turn: StoryTurn) => StoryTurn) => {
-    const currentTurn = getStoredStoryTurn(currentTurnNumber)
-    setStoredStoryTurn(updater(currentTurn))
+  const persistSceneState = (updater: (sceneState: StorySceneState) => StorySceneState) => {
+    const currentSceneState = getStoredStorySceneState(currentSceneNumber)
+    setStoredStorySceneState(updater(currentSceneState))
   }
 
-  const persistCurrentTurnState = () => {
-    setStoredStoryTurn({
-      turnNumber: currentTurnNumber,
+  const persistCurrentSceneState = () => {
+    setStoredStorySceneState({
+      sceneNumber: currentSceneNumber,
       scene: generatedScene,
-      items: turnItems,
+      items: sceneItems,
       activeItemIds: availableActiveItemIds,
       playerAction,
       judgeResult,
@@ -288,12 +288,12 @@ export function StoryPage() {
     })
   }
 
-  const clearFutureTurns = () => {
-    clearStoredStoryTurnsAfter(currentTurnNumber)
+  const clearFutureScenes = () => {
+    clearStoredStorySceneStatesAfter(currentSceneNumber)
 
-    const nextStories = getStoredStoryTurns()
-      .filter((turn) => turn.turnNumber <= currentTurnNumber)
-      .map((turn) => turn.scene)
+    const nextStories = getStoredStorySceneStates()
+      .filter((sceneState) => sceneState.sceneNumber <= currentSceneNumber)
+      .map((sceneState) => sceneState.scene)
       .filter((scene): scene is StoryScene => scene !== null)
 
     setStoredStories(nextStories)
@@ -302,8 +302,8 @@ export function StoryPage() {
   const setPlayerAction = (value: string) => {
     setPlayerActionState(value)
     setStoredPlayerAction(value)
-    persistTurn((turn) => ({
-      ...turn,
+    persistSceneState((sceneState) => ({
+      ...sceneState,
       playerAction: value,
     }))
   }
@@ -315,8 +315,8 @@ export function StoryPage() {
 
     setActiveItemIdsState(nextIds)
     setStoredActiveItemIds(nextIds)
-    persistTurn((turn) => ({
-      ...turn,
+    persistSceneState((sceneState) => ({
+      ...sceneState,
       activeItemIds: nextIds,
     }))
   }
@@ -330,18 +330,18 @@ export function StoryPage() {
     setIsSceneLoading(true)
     setErrorMessage('')
 
-    const storyTurns = getStoredStoryTurns()
-      .filter((turn) => turn.turnNumber < currentTurnNumber)
-      .map((turn) => ({
-        turnNumber: turn.turnNumber,
-        scene: turn.scene,
-        items: turn.items,
-        playerAction: turn.playerAction,
-        activeItemIds: turn.activeItemIds,
-        resolution: getTurnResolution(turn),
+    const storyScenes = getStoredStorySceneStates()
+      .filter((sceneState) => sceneState.sceneNumber < currentSceneNumber)
+      .map((sceneState) => ({
+        sceneNumber: sceneState.sceneNumber,
+        scene: sceneState.scene,
+        items: sceneState.items,
+        playerAction: sceneState.playerAction,
+        activeItemIds: sceneState.activeItemIds,
+        resolution: getSceneResolution(sceneState),
       }))
-    const previousTurn = storyTurns.at(-1) ?? null
-    const systemPrompt = currentTurnNumber === 1 ? gmPrompt : continueGmPrompt
+    const previousScene = storyScenes.at(-1) ?? null
+    const systemPrompt = currentSceneNumber === 1 ? gmPrompt : continueGmPrompt
 
     const userPrompt = [
       '# background',
@@ -365,20 +365,20 @@ export function StoryPage() {
       ),
       '',
       '# items',
-      JSON.stringify(turnItems, null, 2),
+      JSON.stringify(sceneItems, null, 2),
       '',
       '# story_history',
-      JSON.stringify(storyTurns, null, 2),
+      JSON.stringify(storyScenes, null, 2),
     ].join('\n')
 
     const continuePrompt =
-      currentTurnNumber === 1
+      currentSceneNumber === 1
         ? userPrompt
         : [
             userPrompt,
             '',
-            '# previous_turn',
-            JSON.stringify(previousTurn, null, 2),
+            '# previous_scene',
+            JSON.stringify(previousScene, null, 2),
           ].join('\n')
 
     try {
@@ -445,7 +445,7 @@ export function StoryPage() {
       }
 
       const parsed = JSON.parse(content) as StoryScene & { items: SelectedItem[] }
-      clearFutureTurns()
+      clearFutureScenes()
       const nextActiveItemIds = availableActiveItemIds.filter((itemId) =>
         parsed.items.some((item) => item.id === itemId),
       )
@@ -454,20 +454,20 @@ export function StoryPage() {
         scene_text: parsed.scene_text,
       }
       setGeneratedScene(nextScene)
-      setTurnItems(parsed.items)
+      setSceneItems(parsed.items)
       setActiveItemIdsState(nextActiveItemIds)
       setStoredActiveItemIds(nextActiveItemIds)
       setStoredStoryScene(nextScene)
-      const nextStories = getStoredStoryTurns()
-        .filter((turn) => turn.turnNumber <= currentTurnNumber)
-        .map((turn) =>
-          turn.turnNumber === currentTurnNumber ? nextScene : turn.scene,
+      const nextStories = getStoredStorySceneStates()
+        .filter((sceneState) => sceneState.sceneNumber <= currentSceneNumber)
+        .map((sceneState) =>
+          sceneState.sceneNumber === currentSceneNumber ? nextScene : sceneState.scene,
         )
         .filter((scene): scene is StoryScene => scene !== null)
 
       setStoredStories(nextStories)
-      persistTurn((turn) => ({
-        ...turn,
+      persistSceneState((sceneState) => ({
+        ...sceneState,
         scene: nextScene,
         items: parsed.items,
         activeItemIds: nextActiveItemIds,
@@ -481,7 +481,7 @@ export function StoryPage() {
     }
   }
 
-  const handleStartTurn = async () => {
+  const handleConfirmAction = async () => {
     if (!OPENROUTER_API_KEY || !MODEL_NAME) {
       setErrorMessage('.env の API 設定が不足しています。')
       return
@@ -498,15 +498,15 @@ export function StoryPage() {
       setIsJudgeLoading(true)
       setErrorMessage('')
 
-      const storyTurns = getStoredStoryTurns()
-        .filter((turn) => turn.turnNumber <= currentTurnNumber)
-        .map((turn) => ({
-          turnNumber: turn.turnNumber,
-          scene: turn.scene,
-          items: turn.items,
-          playerAction: turn.playerAction,
-          activeItemIds: turn.activeItemIds,
-          resolution: getTurnResolution(turn),
+      const storyScenes = getStoredStorySceneStates()
+        .filter((sceneState) => sceneState.sceneNumber <= currentSceneNumber)
+        .map((sceneState) => ({
+          sceneNumber: sceneState.sceneNumber,
+          scene: sceneState.scene,
+          items: sceneState.items,
+          playerAction: sceneState.playerAction,
+          activeItemIds: sceneState.activeItemIds,
+          resolution: getSceneResolution(sceneState),
         }))
 
       const userPrompt = [
@@ -528,21 +528,21 @@ export function StoryPage() {
           },
           null,
           2,
-      ),
-      '',
-      '# owned_items',
-      JSON.stringify(turnItems, null, 2),
+        ),
+        '',
+        '# owned_items',
+        JSON.stringify(sceneItems, null, 2),
         '',
         '# active_items',
         JSON.stringify(activeItems, null, 2),
         '',
         '# story_history',
-        JSON.stringify(storyTurns, null, 2),
+        JSON.stringify(storyScenes, null, 2),
         '',
-        '# current_turn',
+        '# current_scene',
         JSON.stringify(
           {
-            turnNumber: currentTurnNumber,
+            sceneNumber: currentSceneNumber,
             scene: generatedScene,
             playerAction: trimmedAction,
             activeItemIds: availableActiveItemIds,
@@ -569,7 +569,7 @@ export function StoryPage() {
           response_format: {
             type: 'json_schema',
             json_schema: {
-              name: 'judge_turn_response',
+              name: 'judge_scene_response',
               strict: true,
               schema: {
                 type: 'object',
@@ -623,15 +623,15 @@ export function StoryPage() {
       }
 
       const parsed = JSON.parse(content) as JudgeResult
-      clearFutureTurns()
+      clearFutureScenes()
       setJudgeResult(parsed)
       setStoredJudgeResult(parsed)
       setDiceRoll(null)
       setStoredDiceRoll(null)
       setRollingValue(Math.floor(Math.random() * 20) + 1)
-      persistTurn((turn) => ({
-        ...turn,
-        items: turnItems,
+      persistSceneState((sceneState) => ({
+        ...sceneState,
+        items: sceneItems,
         judgeResult: parsed,
         diceRoll: null,
         playerAction: trimmedAction,
@@ -639,7 +639,7 @@ export function StoryPage() {
       }))
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : 'ターン開始中に不明なエラーが発生しました。',
+        error instanceof Error ? error.message : '行動確定中に不明なエラーが発生しました。',
       )
     } finally {
       setIsJudgeLoading(false)
@@ -653,8 +653,8 @@ export function StoryPage() {
 
     setDiceRoll(rollingValue)
     setStoredDiceRoll(rollingValue)
-    persistTurn((turn) => ({
-      ...turn,
+    persistSceneState((sceneState) => ({
+      ...sceneState,
       diceRoll: rollingValue,
     }))
   }
@@ -667,47 +667,47 @@ export function StoryPage() {
     const rerolledValue = Math.floor(Math.random() * 20) + 1
     setDiceRoll(rerolledValue)
     setStoredDiceRoll(rerolledValue)
-    persistTurn((turn) => ({
-      ...turn,
+    persistSceneState((sceneState) => ({
+      ...sceneState,
       diceRoll: rerolledValue,
     }))
   }
 
-  const handleAdvanceTurn = () => {
-    persistCurrentTurnState()
+  const handleNextScene = () => {
+    persistCurrentSceneState()
     setJudgeResult(null)
     setStoredJudgeResult(null)
     setDiceRoll(null)
     setStoredDiceRoll(null)
-    const nextTurnNumber = currentTurnNumber + 1
-    const nextTurn = getStoredStoryTurn(nextTurnNumber)
+    const nextSceneNumber = currentSceneNumber + 1
+    const nextSceneState = getStoredStorySceneState(nextSceneNumber)
 
     if (
-      nextTurn.scene === null &&
-      nextTurn.items.length === 0 &&
-      nextTurn.activeItemIds.length === 0 &&
-      nextTurn.playerAction === '' &&
-      nextTurn.judgeResult === null &&
-      nextTurn.diceRoll === null
+      nextSceneState.scene === null &&
+      nextSceneState.items.length === 0 &&
+      nextSceneState.activeItemIds.length === 0 &&
+      nextSceneState.playerAction === '' &&
+      nextSceneState.judgeResult === null &&
+      nextSceneState.diceRoll === null
     ) {
-      setStoredStoryTurn({
-        ...createEmptyStoryTurn(nextTurnNumber),
-        items: turnItems,
+      setStoredStorySceneState({
+        ...createEmptyStorySceneState(nextSceneNumber),
+        items: sceneItems,
       })
     }
 
-    setSearchParams({ turn: String(nextTurnNumber) })
+    setSearchParams({ scene: String(nextSceneNumber) })
   }
 
-  const handlePreviousTurn = () => {
-    persistCurrentTurnState()
+  const handlePreviousScene = () => {
+    persistCurrentSceneState()
 
-    if (currentTurnNumber === 1) {
+    if (currentSceneNumber === 1) {
       navigate('/background')
       return
     }
 
-    setSearchParams({ turn: String(currentTurnNumber - 1) })
+    setSearchParams({ scene: String(currentSceneNumber - 1) })
   }
 
   const handleRestart = () => {
@@ -719,8 +719,8 @@ export function StoryPage() {
   const displayRoll = diceRoll ?? (isRolling ? rollingValue : null)
   const totalRoll = displayRoll !== null ? displayRoll + modifier : null
   const isPlayerActionEmpty = playerAction.trim().length === 0
-  const isStartTurnDisabled = isJudgeLoading || isPlayerActionEmpty || !generatedScene
-  const canAdvanceTurn = judgeResult !== null && (!judgeResult.needs_roll || diceRoll !== null)
+  const isConfirmActionDisabled = isJudgeLoading || isPlayerActionEmpty || !generatedScene
+  const canAdvanceScene = judgeResult !== null && (!judgeResult.needs_roll || diceRoll !== null)
   const isSuccess =
     totalRoll !== null && judgeResult?.difficulty !== null
       ? totalRoll >= judgeResult.difficulty
@@ -729,16 +729,16 @@ export function StoryPage() {
   return (
     <main className="page-shell px-4" data-theme="light">
       <PageHeader
-        title={`第${currentTurnNumber}章${generatedScene?.scene_title ? `：${generatedScene.scene_title}` : ''}`}
+        title={`第${currentSceneNumber}シーン${generatedScene?.scene_title ? `：${generatedScene.scene_title}` : ''}`}
         backAction={{
           label: '戻る',
-          onClick: handlePreviousTurn,
+          onClick: handlePreviousScene,
           variant: 'outline',
         }}
         nextAction={{
           label: '次へ',
-          onClick: handleAdvanceTurn,
-          disabled: !canAdvanceTurn,
+          onClick: handleNextScene,
+          disabled: !canAdvanceScene,
           variant: 'primary',
         }}
         restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
@@ -773,7 +773,7 @@ export function StoryPage() {
                 行動時に使うアイテムを選択してください。
               </p>
               <div className="mt-4 flex flex-col gap-3">
-                {turnItems.map((item) => (
+                {sceneItems.map((item) => (
                   <label
                     key={item.id}
                     className={[
@@ -829,7 +829,7 @@ export function StoryPage() {
                 </div>
               ) : (
                 <p className="text-base text-base-content">
-                  シーンを生成しています。しばらく待つと、このターンの状況が表示されます。
+                  シーンを生成しています。しばらく待つと、このシーンの状況が表示されます。
                 </p>
               )}
               </div>
@@ -883,10 +883,10 @@ export function StoryPage() {
                 <button
                   type="button"
                   className="btn btn-primary"
-                  onClick={handleStartTurn}
-                  disabled={isStartTurnDisabled}
+                  onClick={handleConfirmAction}
+                  disabled={isConfirmActionDisabled}
                 >
-                  {isJudgeLoading ? '判定中...' : 'ターン開始'}
+                  {isJudgeLoading ? '判定中...' : '行動を確定'}
                 </button>
               </div>
             </div>
@@ -981,12 +981,12 @@ export function StoryPage() {
                     </p>
                   </div>
                 </div>
-                {canAdvanceTurn ? (
+                {canAdvanceScene ? (
                   <div className="mt-4 flex justify-end">
                     <button
                       type="button"
                       className="btn btn-secondary"
-                      onClick={handleAdvanceTurn}
+                      onClick={handleNextScene}
                     >
                       次へ
                     </button>
