@@ -30,3 +30,4 @@ AGENTS.md
 .dev.vars.*
 
 .wrangler
+worker/wrangler.dev.pid
