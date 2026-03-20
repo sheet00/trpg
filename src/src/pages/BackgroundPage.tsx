@@ -234,6 +234,14 @@ export function BackgroundPage() {
     document.title = '背景設定 | TRPG'
   }, [])
 
+  useEffect(() => {
+    if (generatedBackground || storedBackgroundData || isLoading) {
+      return
+    }
+
+    void handleGenerate()
+  }, [generatedBackground, isLoading, storedBackgroundData])
+
   return (
     <main className="page-shell" data-theme="light">
       <PageHeader
@@ -263,7 +271,7 @@ export function BackgroundPage() {
             onClick={handleGenerate}
             disabled={isLoading}
           >
-            {isLoading ? '生成中...' : '背景を生成'}
+            {isLoading ? '生成中...' : '背景を再生成'}
           </button>
         </div>
 
@@ -343,7 +351,7 @@ export function BackgroundPage() {
             </div>
           ) : (
             <p className="text-base text-base-content">
-              生成ボタンを押すと、開始導入とアイテム候補を作成します。
+              背景を生成しています。しばらく待つと、開始導入とアイテム候補が表示されます。
             </p>
           )}
           </div>

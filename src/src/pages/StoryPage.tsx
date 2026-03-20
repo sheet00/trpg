@@ -194,6 +194,16 @@ export function StoryPage() {
   }, [currentTurnNumber, generatedScene?.scene_title])
 
   useEffect(() => {
+    const storedTurn = getStoredStoryTurn(currentTurnNumber)
+
+    if (generatedScene || storedTurn.scene || isLoading) {
+      return
+    }
+
+    void handleGenerateScene()
+  }, [currentTurnNumber, generatedScene, isLoading])
+
+  useEffect(() => {
     if (!isRolling) {
       return
     }
@@ -510,6 +520,7 @@ export function StoryPage() {
   const modifier = judgeResult?.needs_roll ? getAbilityModifier(judgeResult.ability) : 0
   const displayRoll = diceRoll ?? (isRolling ? rollingValue : null)
   const totalRoll = displayRoll !== null ? displayRoll + modifier : null
+  const isPlayerActionEmpty = playerAction.trim().length === 0
   const isSuccess =
     totalRoll !== null && judgeResult?.difficulty !== null
       ? totalRoll >= judgeResult.difficulty
@@ -611,7 +622,11 @@ export function StoryPage() {
                     {generatedScene.scene_text}
                   </p>
                 </div>
-              ) : null}
+              ) : (
+                <p className="text-base text-base-content">
+                  シーンを生成しています。しばらく待つと、このターンの状況が表示されます。
+                </p>
+              )}
               </div>
             </div>
             <div className="mt-4 flex justify-end">
@@ -664,7 +679,7 @@ export function StoryPage() {
                   type="button"
                   className="btn btn-primary"
                   onClick={handleStartTurn}
-                  disabled={isLoading}
+                  disabled={isLoading || isPlayerActionEmpty}
                 >
                   {isLoading ? '判定中...' : 'ターン開始'}
                 </button>
