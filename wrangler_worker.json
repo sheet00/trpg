@@ -1,6 +1,6 @@
 {
   "$schema": "./src/node_modules/wrangler/config-schema.json",
-  "name": "trpg-hello",
+  "name": "trpg-worker",
   "main": "./worker/index.ts",
   "compatibility_date": "2026-03-20",
   "observability": {
