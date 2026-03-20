@@ -34,6 +34,7 @@ import {
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
 const MODEL_NAME = import.meta.env.VITE_MODEL_ID
+const IS_DEV = import.meta.env.DEV
 
 const abilityLabels = {
   strength: '筋力',
@@ -597,6 +598,20 @@ export function StoryPage() {
     }))
   }
 
+  const handleRerollDice = () => {
+    if (!judgeResult?.needs_roll || diceRoll === null || !IS_DEV) {
+      return
+    }
+
+    const rerolledValue = Math.floor(Math.random() * 20) + 1
+    setDiceRoll(rerolledValue)
+    setStoredDiceRoll(rerolledValue)
+    persistTurn((turn) => ({
+      ...turn,
+      diceRoll: rerolledValue,
+    }))
+  }
+
   const handleAdvanceTurn = () => {
     persistCurrentTurnState()
     setJudgeResult(null)
@@ -842,14 +857,26 @@ export function StoryPage() {
                         : '修正値 0'}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-primary disabled:opacity-50"
-                    onClick={handleRollDice}
-                    disabled={!isRolling}
-                  >
-                    決定
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {IS_DEV ? (
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={handleRerollDice}
+                        disabled={diceRoll === null}
+                      >
+                        振り直し
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="btn btn-primary disabled:opacity-50"
+                      onClick={handleRollDice}
+                      disabled={!isRolling}
+                    >
+                      決定
+                    </button>
+                  </div>
                 </div>
                 <div className="stats stats-vertical mt-4 grid grid-cols-5 gap-3 bg-transparent shadow-none lg:stats-horizontal">
                   <div className="stat rounded-2xl border border-primary bg-base-100 text-center">
