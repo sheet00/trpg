@@ -53,6 +53,7 @@ function isChatCompletionRequest(
 export default {
   async fetch(request: Request, env: Env) {
     const url = new URL(request.url);
+    console.log("request", request.method, url.pathname);
 
     if (request.method === "OPTIONS") {
       return new Response(null, {
@@ -101,6 +102,8 @@ export default {
     if (!model) {
       return jsonResponse({ error: "MODEL_ID が設定されていません。" }, 500);
     }
+
+    console.log("MODEL_ID", model);
 
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
