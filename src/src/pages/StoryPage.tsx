@@ -127,6 +127,19 @@ function getTurnOutcome(turn: StoryTurn) {
   return total >= turn.judgeResult.difficulty ? '成功' : '失敗'
 }
 
+function getTurnResolution(turn: StoryTurn) {
+  if (!turn.judgeResult) {
+    return null
+  }
+
+  const outcome = getTurnOutcome(turn)
+
+  return {
+    result: outcome,
+    summary: turn.judgeResult.message,
+  }
+}
+
 export function StoryPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -302,9 +315,7 @@ export function StoryPage() {
         scene: turn.scene,
         playerAction: turn.playerAction,
         activeItemIds: turn.activeItemIds,
-        judgeResult: turn.judgeResult,
-        diceRoll: turn.diceRoll,
-        outcome: getTurnOutcome(turn),
+        resolution: getTurnResolution(turn),
       }))
     const previousTurn = storyTurns.at(-1) ?? null
     const systemPrompt = currentTurnNumber === 1 ? gmPrompt : continueGmPrompt
@@ -465,9 +476,7 @@ export function StoryPage() {
           scene: turn.scene,
           playerAction: turn.playerAction,
           activeItemIds: turn.activeItemIds,
-          judgeResult: turn.judgeResult,
-          diceRoll: turn.diceRoll,
-          outcome: getTurnOutcome(turn),
+          resolution: getTurnResolution(turn),
         }))
 
       const userPrompt = [
