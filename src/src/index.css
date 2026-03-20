@@ -1,24 +1,42 @@
 @import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default;
+}
 
 :root {
-  --bg: #19130f;
-  --panel: #fbf5e8;
-  --panel-shadow:
-    0 24px 48px rgba(12, 8, 5, 0.28),
-    inset 0 1px 0 rgba(255, 250, 242, 0.42);
-  --border: rgba(94, 68, 44, 0.28);
-  --heading-text: #241913;
-  --body-text: #45352b;
-  --muted-text: #766456;
-  --muted-strong: #8b6f57;
-  --accent-strong: #9f4c31;
   --heading-font: Georgia, 'Times New Roman', serif;
   --body-font: 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif;
+  --color-base-100: #fbf5e8;
+  --color-base-200: #f1e6d2;
+  --color-base-300: #e3d2b7;
+  --color-base-content: #45352b;
+  --color-primary: #9f4c31;
+  --color-primary-content: #fff7f0;
+  --color-secondary: #7a5b47;
+  --color-secondary-content: #fff8f2;
+  --color-accent: #6f8b6b;
+  --color-accent-content: #f5fff4;
+  --color-neutral: #241913;
+  --color-neutral-content: #f7efe2;
+  --color-info: #6f8fa8;
+  --color-info-content: #f7fbff;
+  --color-success: #597a56;
+  --color-success-content: #f5fff2;
+  --color-warning: #ad7a2d;
+  --color-warning-content: #fff9ef;
+  --color-error: #9f3f3a;
+  --color-error-content: #fff5f4;
+  --radius-box: 1.5rem;
+  --radius-field: 0.9rem;
+  --radius-selector: 0.9rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
 
   font-family: var(--body-font);
   line-height: 1.6;
   font-weight: 400;
-  color: var(--body-text);
+  color: var(--color-base-content);
   background:
     radial-gradient(circle at top, rgba(135, 90, 53, 0.28), transparent 30%),
     linear-gradient(180deg, #241913 0%, #19130f 100%);
@@ -26,6 +44,8 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  color-scheme: light;
 }
 
 * {
@@ -49,7 +69,7 @@ body {
 h1,
 h2 {
   margin: 0;
-  color: var(--heading-text);
+  color: var(--color-neutral);
   font-family: var(--heading-font);
   font-weight: 700;
   letter-spacing: 0.01em;

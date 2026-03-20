@@ -22,15 +22,15 @@ export function ClassSelectPage() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-8">
-      <section className="mx-auto w-full max-w-[1380px] rounded-[28px] border border-[color:var(--border)] bg-[color:var(--panel)]/95 p-8 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
-        <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted-text)]">
+    <main className="min-h-screen px-6 py-8" data-theme="light">
+      <section className="mx-auto w-full max-w-[1380px] rounded-[28px] border border-base-300 bg-base-100/95 p-8 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
+        <p className="text-xs uppercase tracking-[0.24em] text-base-content/60">
           Solo TRPG / Character Setup
         </p>
-        <h1 className="mt-3 font-[var(--heading-font)] text-5xl leading-none text-[color:var(--heading-text)]">
+        <h1 className="mt-3 font-[var(--heading-font)] text-5xl leading-none text-neutral">
           冒険のはじまりに、職業を選ぶ
         </h1>
-        <p className="mt-5 max-w-3xl text-base text-[color:var(--body-text)]">
+        <p className="mt-5 max-w-3xl text-base text-base-content">
           あなたの職業を決めてください。
         </p>
 
@@ -43,60 +43,69 @@ export function ClassSelectPage() {
                 key={job.id}
                 type="button"
                 className={[
-                  'flex w-full flex-col gap-3 rounded-2xl border bg-white/35 px-6 py-6 text-left transition',
-                  'border-[color:var(--border)] text-[color:var(--body-text)] hover:bg-white/55',
-                  isSelected ? 'border-[color:var(--heading-text)] bg-white/70 shadow-[0_12px_24px_rgba(12,8,5,0.08)]' : '',
+                  'card border text-left transition',
+                  isSelected
+                    ? 'border-primary bg-base-100 shadow-xl ring-1 ring-primary/20'
+                    : 'border-base-300 bg-base-200/70 hover:border-secondary hover:bg-base-100',
                 ].join(' ')}
                 onClick={() => handleSelectClass(job.id)}
               >
-                <strong className="font-[var(--heading-font)] text-[30px] leading-none text-[color:var(--heading-text)]">
-                  {job.name}
-                </strong>
-                <span className="text-[15px] leading-7">{job.summary}</span>
-                <div className="flex flex-col gap-1 text-sm text-[color:var(--muted-text)]">
-                  <span>戦い方: {job.style}</span>
-                  <span>特徴: {job.feature}</span>
-                  <span>難しさ: {job.difficulty}</span>
+                <div className="card-body gap-4 p-6">
+                  <strong className="font-[var(--heading-font)] text-[30px] leading-none text-neutral">
+                    {job.name}
+                  </strong>
+                  <span className="text-[15px] leading-7 text-base-content">{job.summary}</span>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="badge badge-outline border-secondary text-secondary">
+                      戦い方: {job.style}
+                    </span>
+                    <span className="badge badge-outline border-accent text-accent">
+                      特徴: {job.feature}
+                    </span>
+                    <span className="badge badge-outline border-base-300 text-base-content/70">
+                      難しさ: {job.difficulty}
+                    </span>
+                  </div>
+                  <ul className="ml-4 flex list-disc flex-col gap-1 text-sm text-base-content">
+                    {job.traits.map((trait) => (
+                      <li key={trait}>{trait}</li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="ml-4 flex list-disc flex-col gap-1 text-sm text-[color:var(--body-text)]">
-                  {job.traits.map((trait) => (
-                    <li key={trait}>{trait}</li>
-                  ))}
-                </ul>
               </button>
             )
           })}
         </div>
 
-        <section className="mt-8 flex items-end justify-between gap-8 border-t border-[color:var(--border)] pt-6">
+        <section className="mt-8 flex items-end justify-between gap-8 border-t border-base-300 pt-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted-text)]">
+            <p className="text-xs uppercase tracking-[0.24em] text-base-content/60">
               現在の選択
             </p>
-            <p className="mt-2 font-[var(--heading-font)] text-[30px] text-[color:var(--heading-text)]">
+            <p className="mt-2 font-[var(--heading-font)] text-[30px] text-neutral">
               {selectedJob.name}
             </p>
             <dl className="mt-4 flex gap-8 text-sm">
               <div className="flex flex-col gap-1">
-                <dt className="text-[color:var(--muted-text)]">戦い方:</dt>
+                <dt className="text-base-content/60">戦い方:</dt>
                 <dd>{selectedJob.style}</dd>
               </div>
               <div className="flex flex-col gap-1">
-                <dt className="text-[color:var(--muted-text)]">特徴:</dt>
+                <dt className="text-base-content/60">特徴:</dt>
                 <dd>{selectedJob.feature}</dd>
               </div>
               <div className="flex flex-col gap-1">
-                <dt className="text-[color:var(--muted-text)]">難しさ:</dt>
+                <dt className="text-base-content/60">難しさ:</dt>
                 <dd>{selectedJob.difficulty}</dd>
               </div>
             </dl>
-            <p className="mt-4 max-w-3xl text-base text-[color:var(--body-text)]">
+            <p className="mt-4 max-w-3xl text-base text-base-content">
               {selectedJob.summary}
             </p>
           </div>
           <button
             type="button"
-            className="rounded-xl border border-[color:var(--heading-text)] px-5 py-3 text-sm font-medium text-[color:var(--heading-text)] transition hover:bg-[color:var(--heading-text)] hover:text-[color:var(--panel)]"
+            className="btn btn-primary"
             onClick={handleNext}
           >
             能力値の割り振りへ進む

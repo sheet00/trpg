@@ -113,54 +113,54 @@ export function AbilityScoresPage() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-8">
-      <section className="mx-auto w-full max-w-[980px] rounded-[28px] border border-[color:var(--border)] bg-[color:var(--panel)]/95 p-7 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
+    <main className="min-h-screen px-6 py-8" data-theme="light">
+      <section className="mx-auto w-full max-w-[980px] rounded-[28px] border border-base-300 bg-base-100/95 p-7 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="font-[var(--heading-font)] text-4xl text-[color:var(--heading-text)]">
+            <h1 className="font-[var(--heading-font)] text-4xl text-neutral">
               能力値
             </h1>
-            <p className="mt-1 text-sm text-[color:var(--body-text)]">{selectedJob.name}</p>
+            <p className="mt-1 text-sm text-base-content">{selectedJob.name}</p>
           </div>
           <div className="flex gap-3">
             <button
               type="button"
-              className="inline-flex items-center rounded-xl border border-[color:var(--border)] px-4 py-3 text-sm text-[color:var(--heading-text)] transition hover:bg-white/55"
+              className="btn btn-outline btn-secondary"
               onClick={handleReset}
             >
               8にリセット
             </button>
             <Link
               to="/class-select"
-              className="inline-flex items-center rounded-xl border border-[color:var(--border)] px-4 py-3 text-sm text-[color:var(--heading-text)] transition hover:bg-white/55"
+              className="btn btn-outline"
             >
               職業選択へ戻る
             </Link>
           </div>
         </div>
 
-        <section className="mt-5 grid grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-[color:var(--border)] bg-white/40 px-4 py-3">
-            <span className="text-xs uppercase tracking-[0.18em] text-[color:var(--muted-text)]">
+        <section className="stats mt-5 grid grid-cols-3 gap-3 bg-transparent shadow-none">
+          <div className="stat rounded-2xl border border-base-300 bg-base-200/70">
+            <span className="stat-title text-xs uppercase tracking-[0.18em] text-base-content/60">
               残りポイント
             </span>
-            <strong className="mt-1 block font-[var(--heading-font)] text-2xl text-[color:var(--heading-text)]">
+            <strong className="stat-value mt-1 block font-[var(--heading-font)] text-2xl text-neutral">
               {remainingPoints}
             </strong>
           </div>
-          <div className="rounded-2xl border border-[color:var(--border)] bg-white/40 px-4 py-3">
-            <span className="text-xs uppercase tracking-[0.18em] text-[color:var(--muted-text)]">
+          <div className="stat rounded-2xl border border-base-300 bg-base-200/70">
+            <span className="stat-title text-xs uppercase tracking-[0.18em] text-base-content/60">
               消費ポイント
             </span>
-            <strong className="mt-1 block font-[var(--heading-font)] text-2xl text-[color:var(--heading-text)]">
+            <strong className="stat-value mt-1 block font-[var(--heading-font)] text-2xl text-neutral">
               {totalPoints} / 27
             </strong>
           </div>
-          <div className="rounded-2xl border border-[color:var(--border)] bg-white/40 px-4 py-3">
-            <span className="text-xs uppercase tracking-[0.18em] text-[color:var(--muted-text)]">
+          <div className="stat rounded-2xl border border-base-300 bg-base-200/70">
+            <span className="stat-title text-xs uppercase tracking-[0.18em] text-base-content/60">
               選択クラス
             </span>
-            <strong className="mt-1 block font-[var(--heading-font)] text-2xl text-[color:var(--heading-text)]">
+            <strong className="stat-value mt-1 block font-[var(--heading-font)] text-2xl text-neutral">
               {selectedJob.name}
             </strong>
           </div>
@@ -172,27 +172,29 @@ export function AbilityScoresPage() {
             const modifier = getModifier(score)
 
             return (
-              <div key={ability.key} className="rounded-2xl border border-[color:var(--border)] bg-white/35 px-4 py-4">
-                <div className="flex items-baseline gap-3">
-                  <span className="font-[var(--heading-font)] text-lg text-[color:var(--heading-text)]">
-                    {ability.short}: {ability.label}
-                  </span>
-                  <span className="text-sm text-[color:var(--muted-text)]">{ability.description}</span>
-                </div>
-                <div className="mt-2 grid grid-cols-[minmax(0,1fr)_88px] items-center gap-4">
-                  <input
-                    type="range"
-                    min="8"
-                    max="15"
-                    value={score}
-                    className="w-full accent-[color:var(--heading-text)]"
-                    onChange={(event) =>
-                      handleScoreChange(ability.key, Number(event.target.value))
-                    }
-                  />
-                  <span className="text-right text-sm text-[color:var(--body-text)]">
-                    {score} ({modifier >= 0 ? `+${modifier}` : modifier})
-                  </span>
+              <div key={ability.key} className="card border border-base-300 bg-base-200/70">
+                <div className="card-body gap-3 p-4">
+                  <div className="flex items-baseline gap-3">
+                    <span className="font-[var(--heading-font)] text-lg text-neutral">
+                      {ability.short}: {ability.label}
+                    </span>
+                    <span className="text-sm text-base-content/60">{ability.description}</span>
+                  </div>
+                  <div className="grid grid-cols-[minmax(0,1fr)_88px] items-center gap-4">
+                    <input
+                      type="range"
+                      min="8"
+                      max="15"
+                      value={score}
+                      className="range range-primary range-sm w-full"
+                      onChange={(event) =>
+                        handleScoreChange(ability.key, Number(event.target.value))
+                      }
+                    />
+                    <span className="text-right text-sm text-base-content">
+                      {score} ({modifier >= 0 ? `+${modifier}` : modifier})
+                    </span>
+                  </div>
                 </div>
               </div>
             )
@@ -202,7 +204,7 @@ export function AbilityScoresPage() {
         <div className="mt-5 flex justify-end">
           <Link
             to="/background"
-            className="inline-flex items-center rounded-xl border border-[color:var(--heading-text)] px-5 py-3 text-sm font-medium text-[color:var(--heading-text)] transition hover:bg-[color:var(--heading-text)] hover:text-[color:var(--panel)]"
+            className="btn btn-primary"
           >
             背景設定
           </Link>

@@ -206,32 +206,34 @@ export function BackgroundPage() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-8">
-      <section className="mx-auto w-full max-w-[980px] rounded-[28px] border border-[color:var(--border)] bg-[color:var(--panel)]/95 p-7 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
+    <main className="min-h-screen px-6 py-8" data-theme="light">
+      <section className="mx-auto w-full max-w-[980px] rounded-[28px] border border-base-300 bg-base-100/95 p-7 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="font-[var(--heading-font)] text-4xl text-[color:var(--heading-text)]">
+            <h1 className="font-[var(--heading-font)] text-4xl text-neutral">
               背景設定
             </h1>
-            <p className="mt-1 text-sm text-[color:var(--body-text)]">{selectedJob.name}</p>
+            <p className="mt-1 text-sm text-base-content">{selectedJob.name}</p>
           </div>
           <Link
             to="/ability-scores"
-            className="inline-flex items-center rounded-xl border border-[color:var(--border)] px-4 py-3 text-sm text-[color:var(--heading-text)] transition hover:bg-white/55"
+            className="btn btn-outline"
           >
             能力値へ戻る
           </Link>
         </div>
 
-        <section className="mt-5 flex flex-col gap-2 rounded-2xl border border-[color:var(--border)] bg-white/35 px-5 py-4 text-sm text-[color:var(--body-text)]">
+        <section className="card mt-5 border border-base-300 bg-base-200/70">
+          <div className="card-body gap-2 p-5 text-sm text-base-content">
           <p>クラス: {selectedJob.name}</p>
           <p>能力値: {formatAbilityScores()}</p>
+          </div>
         </section>
 
         <div className="mt-5">
           <button
             type="button"
-            className="inline-flex items-center rounded-xl border border-[color:var(--heading-text)] px-5 py-3 text-sm font-medium text-[color:var(--heading-text)] transition hover:bg-[color:var(--heading-text)] hover:text-[color:var(--panel)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn btn-primary disabled:opacity-50"
             onClick={handleGenerate}
             disabled={isLoading}
           >
@@ -240,27 +242,32 @@ export function BackgroundPage() {
         </div>
 
         {errorMessage ? (
-          <p className="mt-4 text-sm text-[#9f2f2f]">{errorMessage}</p>
+          <p className="alert alert-error mt-4 text-sm">
+            {errorMessage}
+          </p>
         ) : null}
 
-        <section className="mt-5 rounded-2xl border border-[color:var(--border)] bg-white/35 px-5 py-5">
+        <section className="card mt-5 border border-base-300 bg-base-200/70">
+          <div className="card-body p-5">
           {generatedBackground ? (
             <div className="flex flex-col gap-6">
-              <section className="rounded-2xl border border-[color:var(--border)] bg-white/45 px-5 py-5">
-                <h2 className="font-[var(--heading-font)] text-2xl text-[color:var(--heading-text)]">
+              <section className="card border border-base-300 bg-base-100/90">
+                <div className="card-body p-5">
+                <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
                   {generatedBackground.intro_title}
                 </h2>
-                <p className="mt-3 leading-8 text-[color:var(--body-text)]">
+                <p className="mt-3 leading-8 text-base-content">
                   {generatedBackground.intro_text}
                 </p>
+                </div>
               </section>
 
               <section className="flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
-                  <h2 className="font-[var(--heading-font)] text-2xl text-[color:var(--heading-text)]">
+                  <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
                     アイテム候補
                   </h2>
-                  <p className="text-sm text-[color:var(--muted-text)]">
+                  <p className="text-sm text-base-content/60">
                     {selectedItemIds.length} / {MAX_SELECTED_ITEMS} 個選択中
                   </p>
                 </div>
@@ -274,30 +281,30 @@ export function BackgroundPage() {
                       <label
                         key={item.id}
                         className={[
-                          'grid grid-cols-[20px_minmax(0,1fr)] items-start gap-4 rounded-2xl border px-4 py-4 transition',
+                          'card grid grid-cols-[20px_minmax(0,1fr)] items-start gap-4 border p-4 transition',
                           isSelected
-                            ? 'border-[color:var(--heading-text)] bg-white/70'
-                            : 'border-[color:var(--border)] bg-white/40',
-                          isDisabled ? 'opacity-45' : 'cursor-pointer hover:bg-white/60',
+                            ? 'border-primary bg-base-100'
+                            : 'border-base-300 bg-base-100/75',
+                          isDisabled ? 'opacity-45' : 'cursor-pointer hover:border-secondary hover:bg-base-100',
                         ].join(' ')}
                       >
                         <input
                           type="checkbox"
                           checked={isSelected}
                           disabled={isDisabled}
-                          className="mt-1 h-4 w-4 accent-[color:var(--heading-text)]"
+                          className="checkbox checkbox-primary checkbox-sm mt-1"
                           onChange={() => handleToggleItem(item.id)}
                         />
                         <div>
                           <div className="flex items-baseline justify-between gap-4">
-                            <strong className="text-base text-[color:var(--heading-text)]">
+                            <strong className="text-base text-neutral">
                               {item.name}
                             </strong>
-                            <span className="text-[11px] uppercase tracking-[0.12em] text-[color:var(--muted-text)]">
+                            <span className="badge badge-outline badge-sm border-base-300 text-base-content/70">
                               {item.category}
                             </span>
                           </div>
-                          <p className="mt-2 text-sm leading-6 text-[color:var(--body-text)]">
+                          <p className="mt-2 text-sm leading-6 text-base-content">
                             {item.description}
                           </p>
                         </div>
@@ -308,7 +315,7 @@ export function BackgroundPage() {
                 <div className="flex justify-end">
                   <button
                     type="button"
-                    className="inline-flex items-center rounded-xl border border-[color:var(--heading-text)] px-5 py-3 text-sm font-medium text-[color:var(--heading-text)] transition hover:bg-[color:var(--heading-text)] hover:text-[color:var(--panel)] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="btn btn-primary disabled:opacity-50"
                     onClick={handleStartStory}
                     disabled={selectedItemIds.length === 0}
                   >
@@ -318,10 +325,11 @@ export function BackgroundPage() {
               </section>
             </div>
           ) : (
-            <p className="text-sm text-[color:var(--body-text)]">
+            <p className="text-sm text-base-content">
               生成ボタンを押すと、開始導入とアイテム候補を作成します。
             </p>
           )}
+          </div>
         </section>
       </section>
     </main>
