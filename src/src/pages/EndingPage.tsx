@@ -12,7 +12,6 @@ import {
   getStoredStorySceneStates,
   setStoredStories,
   setStoredStorySceneState,
-  type SelectedItem,
   type StoryScene,
 } from '../lib/character-storage'
 
@@ -124,9 +123,6 @@ export function EndingPage() {
     const storedScene = getStoredStorySceneState(endingSceneNumber).scene
     return storedScene?.is_ending ? storedScene : null
   })
-  const [endingItems, setEndingItems] = useState<SelectedItem[]>(() =>
-    getStoredStorySceneState(endingSceneNumber).items,
-  )
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const shouldRedirectToBackground = !selectedJob || !backgroundData
@@ -302,7 +298,6 @@ export function EndingPage() {
       }
 
       setGeneratedEnding(nextEnding)
-      setEndingItems(parsed.items)
       const nextEndingState = {
         ...getStoredStorySceneState(endingSceneNumber),
         sceneNumber: endingSceneNumber,
@@ -372,27 +367,6 @@ export function EndingPage() {
               )}
             </div>
           </section>
-          {generatedEnding ? (
-            <section className="card mt-5 border border-base-300 bg-base-100/85">
-              <div className="card-body p-5">
-                <p className="text-base text-base-content/60">旅の終わりに残った持ち物</p>
-                {endingItems.length > 0 ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {endingItems.map((item) => (
-                      <span
-                        key={item.id}
-                        className="badge badge-outline h-auto border-base-300 px-3 py-3 text-base text-base-content"
-                      >
-                        {item.name}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-2 text-base text-base-content">持ち物は残っていません。</p>
-                )}
-              </div>
-            </section>
-          ) : null}
           <div className="mt-5 flex justify-end">
             <button
               type="button"
