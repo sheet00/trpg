@@ -34,22 +34,32 @@ function renderAction(action: HeaderAction | undefined, navigate: ReturnType<typ
   }
 
   const className = getButtonClassName(action.variant)
+  const href = action.href
+
+  if (typeof href === 'string') {
+    return (
+      <button
+        type="button"
+        className={className}
+        onClick={() => {
+          if (action.disabled) {
+            return
+          }
+
+          navigate(href)
+        }}
+        disabled={action.disabled}
+      >
+        {action.label}
+      </button>
+    )
+  }
 
   return (
     <button
       type="button"
       className={className}
-      onClick={
-        action.href
-          ? () => {
-              if (action.disabled) {
-                return
-              }
-
-              navigate(action.href)
-            }
-          : action.onClick
-      }
+      onClick={action.onClick}
       disabled={action.disabled}
     >
       {action.label}

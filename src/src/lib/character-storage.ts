@@ -54,6 +54,21 @@ export type StoryScene = {
   next_is_ending: boolean
 }
 
+function isSelectedItem(value: unknown): value is SelectedItem {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    typeof value.id === 'string' &&
+    'name' in value &&
+    typeof value.name === 'string' &&
+    'description' in value &&
+    typeof value.description === 'string' &&
+    'category' in value &&
+    typeof value.category === 'string'
+  )
+}
+
 function normalizeStoryScene(value: unknown): StoryScene | null {
   if (
     typeof value !== 'object' ||
@@ -155,13 +170,7 @@ export function getStoredSelectedItems() {
     }
 
     return parsed.filter(
-      (item): item is SelectedItem =>
-        typeof item === 'object' &&
-        item !== null &&
-        typeof item.id === 'string' &&
-        typeof item.name === 'string' &&
-        typeof item.description === 'string' &&
-        typeof item.category === 'string',
+      (item): item is SelectedItem => isSelectedItem(item),
     )
   } catch {
     return []
@@ -187,17 +196,9 @@ export function getStoredBackgroundData() {
       parsed !== null &&
       typeof parsed.intro_title === 'string' &&
       typeof parsed.intro_text === 'string' &&
-      (!('item_candidates' in parsed) ||
+        (!('item_candidates' in parsed) ||
         (Array.isArray(parsed.item_candidates) &&
-          parsed.item_candidates.every(
-            (item) =>
-              typeof item === 'object' &&
-              item !== null &&
-              typeof item.id === 'string' &&
-              typeof item.name === 'string' &&
-              typeof item.description === 'string' &&
-              typeof item.category === 'string',
-          )))
+          parsed.item_candidates.every((item: unknown) => isSelectedItem(item))))
     ) {
       return parsed as BackgroundData
     }
@@ -419,17 +420,9 @@ export function getStoredStorySceneStates() {
           typeof item.maxHp === 'number' &&
           typeof item.currentHp === 'number' &&
           Array.isArray(item.items) &&
-          item.items.every(
-            (storyItem) =>
-              typeof storyItem === 'object' &&
-              storyItem !== null &&
-              typeof storyItem.id === 'string' &&
-              typeof storyItem.name === 'string' &&
-              typeof storyItem.description === 'string' &&
-              typeof storyItem.category === 'string',
-          ) &&
+          item.items.every((storyItem: unknown) => isSelectedItem(storyItem)) &&
           Array.isArray(item.activeItemIds) &&
-          item.activeItemIds.every((activeItemId) => typeof activeItemId === 'string') &&
+          item.activeItemIds.every((activeItemId: unknown) => typeof activeItemId === 'string') &&
           typeof item.playerAction === 'string' &&
           (item.judgeResult === null || isJudgeResult(item.judgeResult)) &&
           (typeof item.diceRoll === 'number' || item.diceRoll === null),

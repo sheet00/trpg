@@ -12,6 +12,7 @@ import {
   getStoredStorySceneStates,
   setStoredStories,
   setStoredStorySceneState,
+  type SelectedItem,
   type StoryScene,
 } from '../lib/character-storage'
 

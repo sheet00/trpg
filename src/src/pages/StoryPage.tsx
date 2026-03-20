@@ -755,9 +755,10 @@ export function StoryPage() {
     judgeResult !== null &&
     (!judgeResult.needs_roll || diceRoll !== null)
   const nextButtonLabel = generatedScene?.next_is_ending ? 'エンディングへ' : '次へ'
+  const difficulty = judgeResult?.difficulty ?? null
   const isSuccess =
-    totalRoll !== null && judgeResult?.difficulty !== null
-      ? totalRoll >= judgeResult.difficulty
+    totalRoll !== null && difficulty !== null
+      ? totalRoll >= difficulty
       : null
 
   return (
