@@ -6,6 +6,7 @@ import judgePrompt from '../assets/03_judge.md?raw'
 import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
 import {
+  clearStoredStoryTurnsAfter,
   clearAllStoredGameData,
   createEmptyStoryTurn,
   getStoredActiveItemIds,
@@ -250,6 +251,17 @@ export function StoryPage() {
     })
   }
 
+  const clearFutureTurns = () => {
+    clearStoredStoryTurnsAfter(currentTurnNumber)
+
+    const nextStories = getStoredStoryTurns()
+      .filter((turn) => turn.turnNumber <= currentTurnNumber)
+      .map((turn) => turn.scene)
+      .filter((scene): scene is StoryScene => scene !== null)
+
+    setStoredStories(nextStories)
+  }
+
   const setPlayerAction = (value: string) => {
     setPlayerActionState(value)
     setStoredPlayerAction(value)
@@ -383,6 +395,7 @@ export function StoryPage() {
       }
 
       const parsed = JSON.parse(content) as StoryScene
+      clearFutureTurns()
       setGeneratedScene(parsed)
       setStoredStoryScene(parsed)
       const nextStories = getStoredStoryTurns()
@@ -549,6 +562,7 @@ export function StoryPage() {
       }
 
       const parsed = JSON.parse(content) as JudgeResult
+      clearFutureTurns()
       setJudgeResult(parsed)
       setStoredJudgeResult(parsed)
       setDiceRoll(null)

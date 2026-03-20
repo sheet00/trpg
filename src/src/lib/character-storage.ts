@@ -443,6 +443,11 @@ export function setStoredStoryTurn(turn: StoryTurn) {
   setStoredStoryTurns(nextTurns)
 }
 
+export function clearStoredStoryTurnsAfter(turnNumber: number) {
+  const turns = getStoredStoryTurns().filter((turn) => turn.turnNumber <= turnNumber)
+  setStoredStoryTurns(turns)
+}
+
 export function clearAllStoredGameData() {
   for (const storageKey of STORAGE_KEYS) {
     window.localStorage.removeItem(storageKey)
