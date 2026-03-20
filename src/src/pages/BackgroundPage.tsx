@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import startPrompt from '../assets/01_start.md?raw'
+import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
 import {
   clearAllStoredGameData,
   getStoredAbilityScores,
+  getStoredBackgroundData,
+  getStoredBackgroundSelection,
   getStoredClassId,
   setStoredBackgroundData,
+  setStoredBackgroundSelection,
   type SelectedItem,
   setStoredSelectedItems,
 } from '../lib/character-storage'
@@ -73,10 +77,20 @@ export function BackgroundPage() {
   const navigate = useNavigate()
   const selectedClassId = getStoredClassId()
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
+  const storedBackgroundData = getStoredBackgroundData()
   const [generatedBackground, setGeneratedBackground] = useState<GeneratedBackground | null>(
-    null,
+    () =>
+      storedBackgroundData?.item_candidates
+        ? {
+            intro_title: storedBackgroundData.intro_title,
+            intro_text: storedBackgroundData.intro_text,
+            item_candidates: storedBackgroundData.item_candidates,
+          }
+        : null,
   )
-  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([])
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>(() =>
+    getStoredBackgroundSelection(),
+  )
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -172,8 +186,10 @@ export function BackgroundPage() {
       setStoredBackgroundData({
         intro_title: parsed.intro_title,
         intro_text: parsed.intro_text,
+        item_candidates: parsed.item_candidates,
       })
       setSelectedItemIds([])
+      setStoredBackgroundSelection([])
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : '生成中に不明なエラーが発生しました。',
@@ -184,13 +200,16 @@ export function BackgroundPage() {
   }
 
   const handleToggleItem = (itemId: string) => {
-    setSelectedItemIds((current) =>
-      current.includes(itemId)
+    setSelectedItemIds((current) => {
+      const nextItemIds = current.includes(itemId)
         ? current.filter((currentItemId) => currentItemId !== itemId)
         : current.length >= MAX_SELECTED_ITEMS
           ? current
-          : [...current, itemId],
-    )
+          : [...current, itemId]
+
+      setStoredBackgroundSelection(nextItemIds)
+      return nextItemIds
+    })
   }
 
   const handleStartStory = () => {
@@ -214,22 +233,18 @@ export function BackgroundPage() {
   return (
     <main className="min-h-screen px-6 py-8" data-theme="light">
       <section className="mx-auto w-full max-w-[980px] rounded-[28px] border border-base-300 bg-base-100/95 p-7 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="font-[var(--heading-font)] text-4xl text-neutral">
-              背景設定
-            </h1>
-            <p className="mt-1 text-base text-base-content">{selectedJob.name}</p>
-          </div>
-          <div className="flex gap-3">
-            <button type="button" className="btn btn-outline" onClick={handleRestart}>
-              最初から
-            </button>
-            <Link to="/ability-scores" className="btn btn-outline">
-              能力値へ戻る
-            </Link>
-          </div>
-        </div>
+        <PageHeader
+          title="背景設定"
+          subtitle={selectedJob.name}
+          backAction={{ label: '戻る', href: '/ability-scores', variant: 'outline' }}
+          nextAction={{
+            label: '次へ',
+            onClick: handleStartStory,
+            disabled: selectedItemIds.length === 0,
+            variant: 'primary',
+          }}
+          restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
+        />
 
         <section className="card mt-5 border border-base-300 bg-base-200/70">
           <div className="card-body gap-2 p-5 text-base text-base-content">
@@ -320,16 +335,7 @@ export function BackgroundPage() {
                     )
                   })}
                 </div>
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    className="btn btn-primary disabled:opacity-50"
-                    onClick={handleStartStory}
-                    disabled={selectedItemIds.length === 0}
-                  >
-                    スタート
-                  </button>
-                </div>
+                <div />
               </section>
             </div>
           ) : (

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
 import {
   clearAllStoredGameData,
@@ -34,21 +35,17 @@ export function ClassSelectPage() {
   return (
     <main className="min-h-screen px-6 py-8" data-theme="light">
       <section className="mx-auto w-full max-w-[1380px] rounded-[28px] border border-base-300 bg-base-100/95 p-8 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-base-content/60">
-              Solo TRPG / Character Setup
-            </p>
-            <h1 className="mt-3 font-[var(--heading-font)] text-5xl leading-none text-neutral">
-              冒険のはじまりに、職業を選ぶ
-            </h1>
-            <p className="mt-5 max-w-3xl text-base text-base-content">
-              あなたの職業を決めてください。
-            </p>
-          </div>
-          <button type="button" className="btn btn-outline" onClick={handleRestart}>
-            最初から
-          </button>
+        <p className="text-sm uppercase tracking-[0.24em] text-base-content/60">
+          Solo TRPG / Character Setup
+        </p>
+        <div className="mt-3">
+          <PageHeader
+            title="冒険のはじまりに、職業を選ぶ"
+            subtitle="あなたの職業を決めてください。"
+            backAction={{ label: '戻る', disabled: true, variant: 'outline' }}
+            nextAction={{ label: '次へ', onClick: handleNext, variant: 'primary' }}
+            restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
+          />
         </div>
 
         <div className="mt-9 grid grid-cols-3 gap-6">
@@ -120,13 +117,7 @@ export function ClassSelectPage() {
               {selectedJob.summary}
             </p>
           </div>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleNext}
-          >
-            能力値の割り振りへ進む
-          </button>
+          <div />
         </section>
       </section>
     </main>

@@ -2,6 +2,7 @@ const SELECTED_CLASS_KEY = 'trpg:selected-class'
 const ABILITY_SCORES_KEY = 'trpg:ability-scores'
 const SELECTED_ITEMS_KEY = 'trpg:selected-items'
 const BACKGROUND_DATA_KEY = 'trpg:background-data'
+const BACKGROUND_SELECTION_KEY = 'trpg:background-selection'
 const STORY_SCENE_KEY = 'trpg:story-scene'
 const ACTIVE_ITEM_IDS_KEY = 'trpg:active-item-ids'
 const STORIES_KEY = 'trpg:stories'
@@ -14,6 +15,7 @@ const STORAGE_KEYS = [
   ABILITY_SCORES_KEY,
   SELECTED_ITEMS_KEY,
   BACKGROUND_DATA_KEY,
+  BACKGROUND_SELECTION_KEY,
   STORY_SCENE_KEY,
   ACTIVE_ITEM_IDS_KEY,
   STORIES_KEY,
@@ -42,6 +44,7 @@ export type SelectedItem = {
 export type BackgroundData = {
   intro_title: string
   intro_text: string
+  item_candidates?: SelectedItem[]
 }
 
 export type StoryScene = {
@@ -155,7 +158,18 @@ export function getStoredBackgroundData() {
       typeof parsed === 'object' &&
       parsed !== null &&
       typeof parsed.intro_title === 'string' &&
-      typeof parsed.intro_text === 'string'
+      typeof parsed.intro_text === 'string' &&
+      (!('item_candidates' in parsed) ||
+        (Array.isArray(parsed.item_candidates) &&
+          parsed.item_candidates.every(
+            (item) =>
+              typeof item === 'object' &&
+              item !== null &&
+              typeof item.id === 'string' &&
+              typeof item.name === 'string' &&
+              typeof item.description === 'string' &&
+              typeof item.category === 'string',
+          )))
     ) {
       return parsed as BackgroundData
     }
@@ -168,6 +182,25 @@ export function getStoredBackgroundData() {
 
 export function setStoredBackgroundData(backgroundData: BackgroundData) {
   window.localStorage.setItem(BACKGROUND_DATA_KEY, JSON.stringify(backgroundData))
+}
+
+export function getStoredBackgroundSelection() {
+  const rawValue = window.localStorage.getItem(BACKGROUND_SELECTION_KEY)
+
+  if (!rawValue) {
+    return [] as string[]
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue)
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export function setStoredBackgroundSelection(itemIds: string[]) {
+  window.localStorage.setItem(BACKGROUND_SELECTION_KEY, JSON.stringify(itemIds))
 }
 
 export function getStoredStoryScene() {

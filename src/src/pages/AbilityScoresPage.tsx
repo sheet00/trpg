@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Link, useNavigate } from 'react-router-dom'
+import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
 import {
   clearAllStoredGameData,
@@ -123,30 +124,13 @@ export function AbilityScoresPage() {
     <main className="min-h-screen px-6 py-8" data-theme="light">
       <section className="mx-auto w-full max-w-[980px] rounded-[28px] border border-base-300 bg-base-100/95 p-7 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
         <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="font-[var(--heading-font)] text-4xl text-neutral">
-              能力値
-            </h1>
-            <p className="mt-1 text-base text-base-content">{selectedJob.name}</p>
-          </div>
-          <div className="flex gap-3">
-            <button type="button" className="btn btn-outline" onClick={handleRestart}>
-              最初から
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline btn-secondary"
-              onClick={handleReset}
-            >
-              8にリセット
-            </button>
-            <Link
-              to="/class-select"
-              className="btn btn-outline"
-            >
-              職業選択へ戻る
-            </Link>
-          </div>
+          <PageHeader
+            title="能力値"
+            subtitle={selectedJob.name}
+            backAction={{ label: '戻る', href: '/class-select', variant: 'outline' }}
+            nextAction={{ label: '次へ', href: '/background', variant: 'primary' }}
+            restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
+          />
         </div>
 
         <section className="stats mt-5 grid grid-cols-3 gap-3 bg-transparent shadow-none">
@@ -212,12 +196,13 @@ export function AbilityScoresPage() {
         </section>
 
         <div className="mt-5 flex justify-end">
-          <Link
-            to="/background"
-            className="btn btn-primary"
+          <button
+            type="button"
+            className="btn btn-outline btn-secondary"
+            onClick={handleReset}
           >
-            背景設定
-          </Link>
+            8にリセット
+          </button>
         </div>
       </section>
     </main>

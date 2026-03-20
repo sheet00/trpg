@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import gmPrompt from '../assets/02_gm.md?raw'
 import judgePrompt from '../assets/03_judge.md?raw'
+import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
 import {
   clearAllStoredGameData,
@@ -488,6 +489,15 @@ export function StoryPage() {
     setSearchParams({ turn: String(nextTurnNumber) })
   }
 
+  const handlePreviousTurn = () => {
+    if (currentTurnNumber === 1) {
+      navigate('/background')
+      return
+    }
+
+    setSearchParams({ turn: String(currentTurnNumber - 1) })
+  }
+
   const handleRestart = () => {
     clearAllStoredGameData()
     navigate('/class-select', { replace: true })
@@ -504,24 +514,17 @@ export function StoryPage() {
   return (
     <main className="min-h-screen px-4 py-6" data-theme="light">
       <section className="mx-auto w-full max-w-[1240px] rounded-[28px] border border-base-300 bg-base-100/95 p-5 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="font-[var(--heading-font)] text-4xl text-neutral">
-              物語開始
-            </h1>
-            <p className="mt-2 text-base text-base-content/60">
-              現在のターン: {currentTurnNumber}
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button type="button" className="btn btn-outline" onClick={handleRestart}>
-              最初から
-            </button>
-            <Link to="/background" className="btn btn-outline">
-              背景設定へ戻る
-            </Link>
-          </div>
-        </div>
+        <PageHeader
+          title="物語開始"
+          subtitle={`現在のターン: ${currentTurnNumber}`}
+          backAction={{
+            label: '戻る',
+            onClick: handlePreviousTurn,
+            variant: 'outline',
+          }}
+          nextAction={{ label: '次へ', onClick: handleAdvanceTurn, variant: 'primary' }}
+          restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
+        />
 
         <div className="mt-4 grid grid-cols-[360px_minmax(0,1fr)] gap-4">
           <aside className="flex flex-col gap-5">
