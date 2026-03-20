@@ -239,8 +239,8 @@ export function StoryPage() {
 
   useEffect(() => {
     document.title = generatedScene?.scene_title
-      ? `第${currentSceneNumber}シーン：${generatedScene.scene_title} | TRPG`
-      : `第${currentSceneNumber}シーン | TRPG`
+      ? `シーン${currentSceneNumber}：${generatedScene.scene_title} | TRPG`
+      : `シーン${currentSceneNumber} | TRPG`
   }, [currentSceneNumber, generatedScene?.scene_title])
 
   useEffect(() => {
@@ -344,6 +344,9 @@ export function StoryPage() {
     const systemPrompt = currentSceneNumber === 1 ? gmPrompt : continueGmPrompt
 
     const userPrompt = [
+      '# current_scene_number',
+      JSON.stringify(currentSceneNumber, null, 2),
+      '',
       '# background',
       JSON.stringify(
         {
@@ -407,6 +410,8 @@ export function StoryPage() {
                 properties: {
                   scene_title: { type: 'string' },
                   scene_text: { type: 'string' },
+                  is_ending: { type: 'boolean' },
+                  next_is_ending: { type: 'boolean' },
                   items: {
                     type: 'array',
                     items: {
@@ -422,7 +427,7 @@ export function StoryPage() {
                     },
                   },
                 },
-                required: ['scene_title', 'scene_text', 'items'],
+                required: ['scene_title', 'scene_text', 'is_ending', 'next_is_ending', 'items'],
               },
             },
           },
@@ -452,6 +457,8 @@ export function StoryPage() {
       const nextScene = {
         scene_title: parsed.scene_title,
         scene_text: parsed.scene_text,
+        is_ending: parsed.is_ending,
+        next_is_ending: parsed.next_is_ending,
       }
       setGeneratedScene(nextScene)
       setSceneItems(parsed.items)
@@ -680,6 +687,12 @@ export function StoryPage() {
     setDiceRoll(null)
     setStoredDiceRoll(null)
     const nextSceneNumber = currentSceneNumber + 1
+
+    if (generatedScene?.next_is_ending) {
+      navigate(`/ending?scene=${nextSceneNumber}`)
+      return
+    }
+
     const nextSceneState = getStoredStorySceneState(nextSceneNumber)
 
     if (
@@ -720,7 +733,11 @@ export function StoryPage() {
   const totalRoll = displayRoll !== null ? displayRoll + modifier : null
   const isPlayerActionEmpty = playerAction.trim().length === 0
   const isConfirmActionDisabled = isJudgeLoading || isPlayerActionEmpty || !generatedScene
-  const canAdvanceScene = judgeResult !== null && (!judgeResult.needs_roll || diceRoll !== null)
+  const canAdvanceScene =
+    generatedScene?.is_ending !== true &&
+    judgeResult !== null &&
+    (!judgeResult.needs_roll || diceRoll !== null)
+  const nextButtonLabel = generatedScene?.next_is_ending ? 'エンディングへ' : '次へ'
   const isSuccess =
     totalRoll !== null && judgeResult?.difficulty !== null
       ? totalRoll >= judgeResult.difficulty
@@ -729,14 +746,14 @@ export function StoryPage() {
   return (
     <main className="page-shell px-4" data-theme="light">
       <PageHeader
-        title={`第${currentSceneNumber}シーン${generatedScene?.scene_title ? `：${generatedScene.scene_title}` : ''}`}
+        title={`シーン${currentSceneNumber}${generatedScene?.scene_title ? `：${generatedScene.scene_title}` : ''}`}
         backAction={{
           label: '戻る',
           onClick: handlePreviousScene,
           variant: 'outline',
         }}
         nextAction={{
-          label: '次へ',
+          label: nextButtonLabel,
           onClick: handleNextScene,
           disabled: !canAdvanceScene,
           variant: 'primary',
@@ -826,6 +843,11 @@ export function StoryPage() {
                   <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-base-content">
                     {generatedScene.scene_text}
                   </p>
+                  {generatedScene.is_ending ? (
+                    <p className="mt-4 text-sm text-base-content/70">
+                      このシーンで物語は決着しています。戻る から過去のシーンを見直せます。
+                    </p>
+                  ) : null}
                 </div>
               ) : (
                 <p className="text-base text-base-content">
@@ -988,7 +1010,7 @@ export function StoryPage() {
                       className="btn btn-secondary"
                       onClick={handleNextScene}
                     >
-                      次へ
+                      {nextButtonLabel}
                     </button>
                   </div>
                 ) : null}

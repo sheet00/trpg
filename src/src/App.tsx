@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AbilityScoresPage } from './pages/AbilityScoresPage'
 import { BackgroundPage } from './pages/BackgroundPage'
 import { ClassSelectPage } from './pages/ClassSelectPage'
+import { EndingPage } from './pages/EndingPage'
 import { StoryPage } from './pages/StoryPage'
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
       <Route path="/ability-scores" element={<AbilityScoresPage />} />
       <Route path="/background" element={<BackgroundPage />} />
       <Route path="/story" element={<StoryPage />} />
+      <Route path="/ending" element={<EndingPage />} />
     </Routes>
   )
 }

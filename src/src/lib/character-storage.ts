@@ -50,6 +50,31 @@ export type BackgroundData = {
 export type StoryScene = {
   scene_title: string
   scene_text: string
+  is_ending: boolean
+  next_is_ending: boolean
+}
+
+function normalizeStoryScene(value: unknown): StoryScene | null {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    !('scene_title' in value) ||
+    typeof value.scene_title !== 'string' ||
+    !('scene_text' in value) ||
+    typeof value.scene_text !== 'string'
+  ) {
+    return null
+  }
+
+  return {
+    scene_title: value.scene_title,
+    scene_text: value.scene_text,
+    is_ending: 'is_ending' in value && typeof value.is_ending === 'boolean' ? value.is_ending : false,
+    next_is_ending:
+      'next_is_ending' in value && typeof value.next_is_ending === 'boolean'
+        ? value.next_is_ending
+        : false,
+  }
 }
 
 export type JudgeResult = {
@@ -213,17 +238,7 @@ export function getStoredStoryScene() {
 
   try {
     const parsed = JSON.parse(rawValue)
-
-    if (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      typeof parsed.scene_title === 'string' &&
-      typeof parsed.scene_text === 'string'
-    ) {
-      return parsed as StoryScene
-    }
-
-    return null
+    return normalizeStoryScene(parsed)
   } catch {
     return null
   }
@@ -247,13 +262,9 @@ export function getStoredStories() {
       return []
     }
 
-    return parsed.filter(
-      (item): item is StoryScene =>
-        typeof item === 'object' &&
-        item !== null &&
-        typeof item.scene_title === 'string' &&
-        typeof item.scene_text === 'string',
-    )
+    return parsed
+      .map((item) => normalizeStoryScene(item))
+      .filter((item): item is StoryScene => item !== null)
   } catch {
     return []
   }
@@ -348,14 +359,7 @@ export function setStoredDiceRoll(diceRoll: number | null) {
 }
 
 function isStoryScene(value: unknown): value is StoryScene {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'scene_title' in value &&
-    typeof value.scene_title === 'string' &&
-    'scene_text' in value &&
-    typeof value.scene_text === 'string'
-  )
+  return normalizeStoryScene(value) !== null
 }
 
 function isJudgeResult(value: unknown): value is JudgeResult {
