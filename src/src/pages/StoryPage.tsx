@@ -692,7 +692,7 @@ export function StoryPage() {
 
   const handleRestart = () => {
     clearAllStoredGameData()
-    navigate('/class-select', { replace: true })
+    navigate('/', { replace: true })
   }
 
   const modifier = judgeResult?.needs_roll ? getAbilityModifier(judgeResult.ability) : 0

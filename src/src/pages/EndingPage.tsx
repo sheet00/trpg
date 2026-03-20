@@ -302,7 +302,7 @@ export function EndingPage() {
 
   const handleRestart = () => {
     clearAllStoredGameData()
-    navigate('/class-select', { replace: true })
+    navigate('/', { replace: true })
   }
 
   if (shouldRedirectToBackground) {

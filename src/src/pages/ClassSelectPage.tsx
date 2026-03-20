@@ -28,8 +28,7 @@ export function ClassSelectPage() {
 
   const handleRestart = () => {
     clearAllStoredGameData()
-    setSelectedClass(characterClasses[0].id)
-    navigate('/class-select', { replace: true })
+    navigate('/', { replace: true })
   }
 
   useEffect(() => {

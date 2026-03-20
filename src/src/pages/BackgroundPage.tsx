@@ -216,7 +216,7 @@ export function BackgroundPage() {
 
   const handleRestart = () => {
     clearAllStoredGameData()
-    navigate('/class-select', { replace: true })
+    navigate('/', { replace: true })
   }
 
   useEffect(() => {
