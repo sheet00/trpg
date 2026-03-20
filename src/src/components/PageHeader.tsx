@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 type HeaderAction = {
   disabled?: boolean
@@ -14,39 +14,42 @@ type PageHeaderProps = {
   backAction?: HeaderAction
   nextAction?: HeaderAction
   restartAction: HeaderAction
+  titleClassName?: string
 }
 
 function getButtonClassName(variant: HeaderAction['variant']) {
   switch (variant) {
     case 'primary':
-      return 'btn btn-primary'
+      return 'btn btn-primary text-base'
     case 'error':
-      return 'btn btn-outline btn-error'
+      return 'btn btn-outline btn-error text-base'
     default:
-      return 'btn btn-outline'
+      return 'btn btn-outline text-base'
   }
 }
 
-function renderAction(action?: HeaderAction) {
+function renderAction(action: HeaderAction | undefined, navigate: ReturnType<typeof useNavigate>) {
   if (!action) {
     return null
   }
 
   const className = getButtonClassName(action.variant)
 
-  if (action.href) {
-    return (
-      <Link aria-disabled={action.disabled} className={className} to={action.href}>
-        {action.label}
-      </Link>
-    )
-  }
-
   return (
     <button
       type="button"
       className={className}
-      onClick={action.onClick}
+      onClick={
+        action.href
+          ? () => {
+              if (action.disabled) {
+                return
+              }
+
+              navigate(action.href)
+            }
+          : action.onClick
+      }
       disabled={action.disabled}
     >
       {action.label}
@@ -60,19 +63,30 @@ export function PageHeader({
   backAction,
   nextAction,
   restartAction,
+  titleClassName,
 }: PageHeaderProps) {
+  const navigate = useNavigate()
+
   return (
-    <div className="flex items-start justify-between gap-4">
-      <div>
-        <h1 className="font-[var(--heading-font)] text-4xl text-neutral">{title}</h1>
-        {subtitle ? <p className="mt-2 text-base text-base-content/60">{subtitle}</p> : null}
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-base-300 bg-base-100/95 backdrop-blur-md">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-8 px-6 py-4">
+        <div className="min-w-0">
+          <h2
+            className={
+              titleClassName ?? 'page-header-title font-[var(--heading-font)] text-neutral'
+            }
+          >
+            {title}
+          </h2>
+          {subtitle ? <p className="mt-1 text-base text-base-content/60">{subtitle}</p> : null}
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          {renderAction(backAction, navigate)}
+          {renderAction(nextAction, navigate)}
+          <div className="mx-1 h-8 w-px bg-base-300" />
+          {renderAction(restartAction, navigate)}
+        </div>
       </div>
-      <div className="flex items-center gap-3">
-        {renderAction(backAction)}
-        {renderAction(nextAction)}
-        <div className="mx-1 h-8 w-px bg-base-300" />
-        {renderAction(restartAction)}
-      </div>
-    </div>
+    </header>
   )
 }

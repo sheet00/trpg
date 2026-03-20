@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
@@ -32,21 +32,22 @@ export function ClassSelectPage() {
     navigate('/class-select', { replace: true })
   }
 
+  useEffect(() => {
+    document.title = 'クラス選択 | TRPG'
+  }, [])
+
   return (
-    <main className="min-h-screen px-6 py-8" data-theme="light">
-      <section className="mx-auto w-full max-w-[1380px] rounded-[28px] border border-base-300 bg-base-100/95 p-8 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
+    <main className="page-shell" data-theme="light">
+      <PageHeader
+        title="冒険のはじまりに、職業を選ぶ"
+        backAction={{ label: '戻る', disabled: true, variant: 'outline' }}
+        nextAction={{ label: '次へ', onClick: handleNext, variant: 'primary' }}
+        restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
+      />
+      <section className="page-panel w-full max-w-[1380px] p-8">
         <p className="text-sm uppercase tracking-[0.24em] text-base-content/60">
           Solo TRPG / Character Setup
         </p>
-        <div className="mt-3">
-          <PageHeader
-            title="冒険のはじまりに、職業を選ぶ"
-            subtitle="あなたの職業を決めてください。"
-            backAction={{ label: '戻る', disabled: true, variant: 'outline' }}
-            nextAction={{ label: '次へ', onClick: handleNext, variant: 'primary' }}
-            restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
-          />
-        </div>
 
         <div className="mt-9 grid grid-cols-3 gap-6">
           {characterClasses.map((job) => {

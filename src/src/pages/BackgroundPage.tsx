@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import startPrompt from '../assets/01_start.md?raw'
 import { PageHeader } from '../components/PageHeader'
@@ -230,30 +230,33 @@ export function BackgroundPage() {
     navigate('/class-select', { replace: true })
   }
 
-  return (
-    <main className="min-h-screen px-6 py-8" data-theme="light">
-      <section className="mx-auto w-full max-w-[980px] rounded-[28px] border border-base-300 bg-base-100/95 p-7 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
-        <PageHeader
-          title="背景設定"
-          subtitle={selectedJob.name}
-          backAction={{ label: '戻る', href: '/ability-scores', variant: 'outline' }}
-          nextAction={{
-            label: '次へ',
-            onClick: handleStartStory,
-            disabled: selectedItemIds.length === 0,
-            variant: 'primary',
-          }}
-          restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
-        />
+  useEffect(() => {
+    document.title = '背景設定 | TRPG'
+  }, [])
 
-        <section className="card mt-5 border border-base-300 bg-base-200/70">
+  return (
+    <main className="page-shell" data-theme="light">
+      <PageHeader
+        title="背景設定"
+        backAction={{ label: '戻る', href: '/ability-scores', variant: 'outline' }}
+        nextAction={{
+          label: '次へ',
+          onClick: handleStartStory,
+          disabled: selectedItemIds.length === 0,
+          variant: 'primary',
+        }}
+        restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
+      />
+      <section className="page-panel w-full max-w-[980px] p-7">
+        <div className="page-stack">
+        <section className="card border border-base-300 bg-base-200/70">
           <div className="card-body gap-2 p-5 text-base text-base-content">
           <p>クラス: {selectedJob.name}</p>
           <p>能力値: {formatAbilityScores()}</p>
           </div>
         </section>
 
-        <div className="mt-5">
+        <div>
           <button
             type="button"
             className="btn btn-primary disabled:opacity-50"
@@ -265,12 +268,12 @@ export function BackgroundPage() {
         </div>
 
         {errorMessage ? (
-          <p className="alert alert-error mt-4 text-base">
+          <p className="alert alert-error text-base">
             {errorMessage}
           </p>
         ) : null}
 
-        <section className="card mt-5 border border-base-300 bg-base-200/70">
+        <section className="card border border-base-300 bg-base-200/70">
           <div className="card-body p-5">
           {generatedBackground ? (
             <div className="flex flex-col gap-6">
@@ -345,6 +348,7 @@ export function BackgroundPage() {
           )}
           </div>
         </section>
+        </div>
       </section>
     </main>
   )

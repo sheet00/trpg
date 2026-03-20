@@ -120,20 +120,21 @@ export function AbilityScoresPage() {
     navigate('/class-select', { replace: true })
   }
 
-  return (
-    <main className="min-h-screen px-6 py-8" data-theme="light">
-      <section className="mx-auto w-full max-w-[980px] rounded-[28px] border border-base-300 bg-base-100/95 p-7 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
-        <div className="flex items-center justify-between gap-4">
-          <PageHeader
-            title="能力値"
-            subtitle={selectedJob.name}
-            backAction={{ label: '戻る', href: '/class-select', variant: 'outline' }}
-            nextAction={{ label: '次へ', href: '/background', variant: 'primary' }}
-            restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
-          />
-        </div>
+  useEffect(() => {
+    document.title = '能力値 | TRPG'
+  }, [])
 
-        <section className="stats mt-5 grid grid-cols-3 gap-3 bg-transparent shadow-none">
+  return (
+    <main className="page-shell" data-theme="light">
+      <PageHeader
+        title="能力値"
+        backAction={{ label: '戻る', href: '/class-select', variant: 'outline' }}
+        nextAction={{ label: '次へ', href: '/background', variant: 'primary' }}
+        restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
+      />
+      <section className="page-panel w-full max-w-[980px] p-7">
+        <div className="page-stack">
+        <section className="stats grid grid-cols-3 gap-3 bg-transparent shadow-none">
           <div className="stat rounded-2xl border border-base-300 bg-base-200/70">
             <span className="stat-title text-sm uppercase tracking-[0.18em] text-base-content/60">
               残りポイント
@@ -160,7 +161,7 @@ export function AbilityScoresPage() {
           </div>
         </section>
 
-        <section className="mt-5 flex flex-col gap-3">
+        <section className="flex flex-col gap-3">
           {abilityDefinitions.map((ability) => {
             const score = scores[ability.key]
             const modifier = getModifier(score)
@@ -195,7 +196,7 @@ export function AbilityScoresPage() {
           })}
         </section>
 
-        <div className="mt-5 flex justify-end">
+        <div className="flex justify-end">
           <button
             type="button"
             className="btn btn-outline btn-secondary"
@@ -203,6 +204,7 @@ export function AbilityScoresPage() {
           >
             8にリセット
           </button>
+        </div>
         </div>
       </section>
     </main>

@@ -190,6 +190,10 @@ export function StoryPage() {
   }, [currentTurnNumber])
 
   useEffect(() => {
+    document.title = `第${currentTurnNumber}章：${generatedScene?.scene_title ?? '幕開け'} | TRPG`
+  }, [currentTurnNumber, generatedScene?.scene_title])
+
+  useEffect(() => {
     if (!isRolling) {
       return
     }
@@ -512,19 +516,18 @@ export function StoryPage() {
       : null
 
   return (
-    <main className="min-h-screen px-4 py-6" data-theme="light">
-      <section className="mx-auto w-full max-w-[1240px] rounded-[28px] border border-base-300 bg-base-100/95 p-5 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
-        <PageHeader
-          title="物語開始"
-          subtitle={`現在のターン: ${currentTurnNumber}`}
-          backAction={{
-            label: '戻る',
-            onClick: handlePreviousTurn,
-            variant: 'outline',
-          }}
-          nextAction={{ label: '次へ', onClick: handleAdvanceTurn, variant: 'primary' }}
-          restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
-        />
+    <main className="page-shell px-4" data-theme="light">
+      <PageHeader
+        title={`第${currentTurnNumber}章：${generatedScene?.scene_title ?? '幕開け'}`}
+        backAction={{
+          label: '戻る',
+          onClick: handlePreviousTurn,
+          variant: 'outline',
+        }}
+        nextAction={{ label: '次へ', onClick: handleAdvanceTurn, variant: 'primary' }}
+        restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
+      />
+      <section className="page-panel w-full max-w-[1240px] p-5">
 
         <div className="mt-4 grid grid-cols-[360px_minmax(0,1fr)] gap-4">
           <aside className="flex flex-col gap-5">
@@ -592,15 +595,12 @@ export function StoryPage() {
 
           <section className="card border border-base-300 bg-base-200/70">
             <div className="card-body p-5">
-            <h2 className="font-[var(--heading-font)] text-3xl text-neutral">
-              本編開始
-            </h2>
             {errorMessage ? (
-              <p className="alert alert-error mt-4 text-base">
+              <p className="alert alert-error text-base">
                 {errorMessage}
               </p>
             ) : null}
-            <div className="card mt-4 border border-base-300 bg-base-100/85">
+            <div className="card border border-base-300 bg-base-100/85">
               <div className="card-body p-4">
               {generatedScene ? (
                 <div>
@@ -621,7 +621,7 @@ export function StoryPage() {
                 onClick={handleGenerateScene}
                 disabled={isLoading}
               >
-                {isLoading ? '生成中...' : 'シーン生成'}
+                {isLoading ? '生成中...' : 'シーン再生成'}
               </button>
             </div>
             <div className="card mt-4 border border-base-300 bg-base-100/85">
