@@ -9,11 +9,13 @@ type ChatCompletionRequest = {
   model?: string
   messages: ChatMessage[]
   response_format?: unknown
+  tools?: unknown[]
+  tool_choice?: unknown
 }
 
 type ChatCompletionResponse = {
   error?: { message?: string }
-  choices?: Array<{ message?: { content?: unknown } }>
+  choices?: Array<{ message?: { content?: string } }>
 }
 
 export async function postChatCompletion(

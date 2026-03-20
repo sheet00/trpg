@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import startPrompt from '../assets/01_start.md?raw'
 import { PageHeader } from '../components/PageHeader'
@@ -100,12 +100,15 @@ export function BackgroundPage() {
   const [hasAttemptedAutoGenerate, setHasAttemptedAutoGenerate] = useState(() =>
     storedBackgroundData?.item_candidates ? true : false,
   )
+  const isGeneratingRef = useRef(false)
 
   if (!selectedJob) {
     return <Navigate to="/class-select" replace />
   }
 
   const handleGenerate = async () => {
+    if (isGeneratingRef.current) return
+    isGeneratingRef.current = true
     setIsLoading(true)
     setErrorMessage('')
 
@@ -126,36 +129,37 @@ export function BackgroundPage() {
           { role: 'system', content: startPrompt },
           { role: 'user', content: userPrompt },
         ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'background_start_response',
-            strict: true,
-            schema: {
-              type: 'object',
-              additionalProperties: false,
-              properties: {
-                intro_title: { type: 'string' },
-                intro_text: { type: 'string' },
-                item_candidates: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    additionalProperties: false,
-                    properties: {
-                      id: { type: 'string' },
-                      name: { type: 'string' },
-                      description: { type: 'string' },
-                      category: { type: 'string' },
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'generate_background',
+              description: 'TRPGの背景設定と初期アイテム候補を生成します。',
+              parameters: {
+                type: 'object',
+                properties: {
+                  intro_title: { type: 'string' },
+                  intro_text: { type: 'string' },
+                  item_candidates: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        name: { type: 'string' },
+                        description: { type: 'string' },
+                        category: { type: 'string' },
+                      },
+                      required: ['id', 'name', 'description', 'category'],
                     },
-                    required: ['id', 'name', 'description', 'category'],
                   },
                 },
+                required: ['intro_title', 'intro_text', 'item_candidates'],
               },
-              required: ['intro_title', 'intro_text', 'item_candidates'],
             },
           },
-        },
+        ],
+        tool_choice: 'auto',
       })
 
       const content = extractTextContent(data.choices?.[0]?.message?.content)
@@ -179,6 +183,7 @@ export function BackgroundPage() {
       )
     } finally {
       setIsLoading(false)
+      isGeneratingRef.current = false
     }
   }
 
@@ -227,7 +232,7 @@ export function BackgroundPage() {
   }, [])
 
   useEffect(() => {
-    if (generatedBackground || storedBackgroundData || isLoading || hasAttemptedAutoGenerate) {
+    if (generatedBackground || storedBackgroundData || isLoading || hasAttemptedAutoGenerate || isGeneratingRef.current) {
       return
     }
 

@@ -12,6 +12,8 @@ type ChatCompletionRequest = {
   model?: string;
   messages: ChatMessage[];
   response_format?: unknown;
+  tools?: unknown[];
+  tool_choice?: unknown;
 };
 
 const corsHeaders = {
@@ -105,6 +107,15 @@ export default {
 
     console.log("MODEL_ID", model);
 
+    const requestBody: any = {
+      model,
+      messages: payload.messages,
+    };
+
+    if (payload.response_format) requestBody.response_format = payload.response_format;
+    if (payload.tools) requestBody.tools = payload.tools;
+    if (payload.tool_choice) requestBody.tool_choice = payload.tool_choice;
+
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -115,20 +126,23 @@ export default {
           "HTTP-Referer": "https://trpg-hello.sheet00.workers.dev",
           "X-Title": "TRPG Worker",
         },
-        body: JSON.stringify({
-          model,
-          messages: payload.messages,
-          response_format: payload.response_format,
-        }),
+        body: JSON.stringify(requestBody),
       },
     );
 
-    return new Response(response.body, {
-      status: response.status,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
+    const result = (await response.json()) as any;
+
+    // Tool Call がある場合は、その引数を content として差し替えてフロントに返す
+    if (result.choices?.[0]?.message?.tool_calls?.[0]) {
+      const toolCall = result.choices[0].message.tool_calls[0];
+      const functionArgs = toolCall.function.arguments;
+      
+      // フロントエンドが期待する通常のレスポンス形式に整形
+      result.choices[0].message.content = functionArgs;
+      // 不要な tool_calls フィールドを削除（念のため）
+      delete result.choices[0].message.tool_calls;
+    }
+
+    return jsonResponse(result, response.status);
   },
 };
