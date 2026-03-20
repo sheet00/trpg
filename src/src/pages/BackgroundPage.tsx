@@ -46,38 +46,6 @@ function formatAbilityScores() {
   ].join(' / ')
 }
 
-function extractTextContent(content: unknown) {
-  if (typeof content === 'string') {
-    return content
-  }
-
-  if (Array.isArray(content)) {
-    return content
-      .map((item) => {
-        if (typeof item === 'string') {
-          return item
-        }
-
-        if (
-          typeof item === 'object' &&
-          item !== null &&
-          'type' in item &&
-          item.type === 'text' &&
-          'text' in item &&
-          typeof item.text === 'string'
-        ) {
-          return item.text
-        }
-
-        return ''
-      })
-      .join('\n')
-      .trim()
-  }
-
-  return ''
-}
-
 export function BackgroundPage() {
   const navigate = useNavigate()
   const selectedClassId = getStoredClassId()
@@ -103,6 +71,11 @@ export function BackgroundPage() {
   )
   const isGeneratingRef = useRef(false)
 
+  const handleRestart = () => {
+    clearAllStoredGameData()
+    navigate('/', { replace: true })
+  }
+
   if (!selectedJob) {
     return <Navigate to="/class-select" replace />
   }
@@ -125,7 +98,7 @@ export function BackgroundPage() {
     ].join('\n')
 
     try {
-      const data = await postChatCompletion({
+      const parsed = await postChatCompletion<GeneratedBackground>({
         messages: [
           { role: 'system', content: startPrompt },
           { role: 'user', content: userPrompt },
@@ -160,16 +133,9 @@ export function BackgroundPage() {
             },
           },
         ],
-        tool_choice: 'auto',
+        tool_choice: { type: 'function', function: { name: 'generate_background' } },
       })
 
-      const content = extractTextContent(data.choices?.[0]?.message?.content)
-
-      if (!content) {
-        throw new Error('生成結果が空でした。')
-      }
-
-      const parsed = JSON.parse(content) as GeneratedBackground
       setGeneratedBackground(parsed)
       setStoredBackgroundData({
         intro_title: parsed.intro_title,

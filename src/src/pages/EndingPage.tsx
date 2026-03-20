@@ -18,38 +18,6 @@ import {
 import { postChatCompletion } from '../lib/api-client'
 import { formatTextWithLineBreaks } from '../lib/text-utils'
 
-function extractTextContent(content: unknown) {
-  if (typeof content === 'string') {
-    return content
-  }
-
-  if (Array.isArray(content)) {
-    return content
-      .map((item) => {
-        if (typeof item === 'string') {
-          return item
-        }
-
-        if (
-          typeof item === 'object' &&
-          item !== null &&
-          'type' in item &&
-          item.type === 'text' &&
-          'text' in item &&
-          typeof item.text === 'string'
-        ) {
-          return item.text
-        }
-
-        return ''
-      })
-      .join('\n')
-      .trim()
-  }
-
-  return ''
-}
-
 function getAbilityRows() {
   const scores = getStoredAbilityScores()
 
@@ -237,7 +205,7 @@ export function EndingPage() {
     ].join('\n')
 
     try {
-      const data = await postChatCompletion({
+      const parsed = await postChatCompletion<StoryScene & { items: SelectedItem[] }>({
         messages: [
           { role: 'system', content: endingPrompt },
           { role: 'user', content: userPrompt },
@@ -274,16 +242,9 @@ export function EndingPage() {
             },
           },
         ],
-        tool_choice: 'auto',
+        tool_choice: { type: 'function', function: { name: 'generate_scene' } },
       })
 
-      const content = extractTextContent(data.choices?.[0]?.message?.content)
-
-      if (!content) {
-        throw new Error('生成結果が空でした。')
-      }
-
-      const parsed = JSON.parse(content) as StoryScene & { items: SelectedItem[] }
       const nextEnding = {
         scene_title: parsed.scene_title,
         scene_text: parsed.scene_text,

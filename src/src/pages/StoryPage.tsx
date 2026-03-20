@@ -58,38 +58,6 @@ function getAbilityRows() {
   ] as const
 }
 
-function extractTextContent(content: unknown) {
-  if (typeof content === 'string') {
-    return content
-  }
-
-  if (Array.isArray(content)) {
-    return content
-      .map((item) => {
-        if (typeof item === 'string') {
-          return item
-        }
-
-        if (
-          typeof item === 'object' &&
-          item !== null &&
-          'type' in item &&
-          item.type === 'text' &&
-          'text' in item &&
-          typeof item.text === 'string'
-        ) {
-          return item.text
-        }
-
-        return ''
-      })
-      .join('\n')
-      .trim()
-  }
-
-  return ''
-}
-
 function getAbilityModifier(ability: string | null) {
   const scores = getStoredAbilityScores()
 
@@ -398,14 +366,14 @@ export function StoryPage() {
       currentSceneNumber === 1
         ? userPrompt
         : [
-            userPrompt,
-            '',
-            '# previous_scene',
-            JSON.stringify(previousScene, null, 2),
-          ].join('\n')
+          userPrompt,
+          '',
+          '# previous_scene',
+          JSON.stringify(previousScene, null, 2),
+        ].join('\n')
 
     try {
-      const data = await postChatCompletion({
+      const parsed = await postChatCompletion<StoryScene & { items: SelectedItem[] }>({
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: continuePrompt },
@@ -442,18 +410,9 @@ export function StoryPage() {
             },
           },
         ],
-        tool_choice: 'auto',
+        tool_choice: { type: 'function', function: { name: 'generate_scene' } },
       })
 
-      const content = extractTextContent(data.choices?.[0]?.message?.content)
-
-      console.log('--- RAW SCENE CONTENT ---', content)
-
-      if (!content) {
-        throw new Error('生成結果が空でした。')
-      }
-
-      const parsed = JSON.parse(content) as StoryScene & { items: SelectedItem[] }
       clearFutureScenes()
       const nextActiveItemIds = availableActiveItemIds.filter((itemId) =>
         parsed.items.some((item) => item.id === itemId),
@@ -559,7 +518,7 @@ export function StoryPage() {
         ),
       ].join('\n')
 
-      const data = await postChatCompletion({
+      const parsed = await postChatCompletion<JudgeResult>({
         messages: [
           { role: 'system', content: judgePrompt },
           { role: 'user', content: userPrompt },
@@ -595,18 +554,9 @@ export function StoryPage() {
             },
           },
         ],
-        tool_choice: 'auto',
+        tool_choice: { type: 'function', function: { name: 'judge_action' } },
       })
 
-      const content = extractTextContent(data.choices?.[0]?.message?.content)
-
-      console.log('--- RAW JUDGE CONTENT ---', content)
-
-      if (!content) {
-        throw new Error('判定結果が空でした。')
-      }
-
-      const parsed = JSON.parse(content) as JudgeResult
       clearFutureScenes()
       setJudgeResult(parsed)
       setStoredJudgeResult(parsed)
@@ -746,272 +696,272 @@ export function StoryPage() {
           <aside className="flex flex-col gap-5">
             <section className="card border border-base-300 bg-base-200/70">
               <div className="card-body p-4">
-              <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
-                {selectedJob.name}
-              </h2>
-              <div className="mt-4">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-sm uppercase tracking-[0.18em] text-base-content/60">HP</span>
-                  <strong className="text-lg text-neutral">
-                    {currentHp} / {maxHp}
-                  </strong>
-                </div>
-                <progress
-                  className="progress progress-error mt-2 w-full"
-                  value={currentHp}
-                  max={Math.max(maxHp, 1)}
-                />
-                <p className="mt-2 text-sm text-base-content/60">
-                  残り {Math.round(hpRatio)}%
-                </p>
-              </div>
-              <div className="mt-4 flex flex-col gap-2 text-base text-base-content">
-                {abilityRows.map(([label, value]) => (
-                  <div key={label} className="flex items-center justify-between gap-4">
-                    <span className="text-base-content/60">{label}</span>
-                    <strong className="text-neutral">{value}</strong>
+                <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
+                  {selectedJob.name}
+                </h2>
+                <div className="mt-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-sm uppercase tracking-[0.18em] text-base-content/60">HP</span>
+                    <strong className="text-lg text-neutral">
+                      {currentHp} / {maxHp}
+                    </strong>
                   </div>
-                ))}
-              </div>
+                  <progress
+                    className="progress progress-error mt-2 w-full"
+                    value={currentHp}
+                    max={Math.max(maxHp, 1)}
+                  />
+                  <p className="mt-2 text-sm text-base-content/60">
+                    残り {Math.round(hpRatio)}%
+                  </p>
+                </div>
+                <div className="mt-4 flex flex-col gap-2 text-base text-base-content">
+                  {abilityRows.map(([label, value]) => (
+                    <div key={label} className="flex items-center justify-between gap-4">
+                      <span className="text-base-content/60">{label}</span>
+                      <strong className="text-neutral">{value}</strong>
+                    </div>
+                  ))}
+                </div>
               </div>
             </section>
 
             <section className="card border border-base-300 bg-base-200/70">
               <div className="card-body p-4">
-              <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
-                選択したアイテム
-              </h2>
-              <p className="mt-2 text-base text-base-content/60">
-                行動時に使うアイテムを選択してください。
-              </p>
-              <div className="mt-4 flex flex-col gap-3">
-                {sceneItems.map((item) => (
-                  <label
-                    key={item.id}
-                    className={[
-                      'card grid cursor-pointer grid-cols-[20px_minmax(0,1fr)] gap-3 border p-3 transition',
-                      availableActiveItemIds.includes(item.id)
-                        ? 'border-primary bg-base-100'
-                        : 'border-base-300 bg-base-100/75 hover:border-secondary hover:bg-base-100',
-                    ].join(' ')}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={availableActiveItemIds.includes(item.id)}
-                      onChange={() => handleToggleActiveItem(item.id)}
-                      className="checkbox checkbox-primary checkbox-sm mt-1"
-                    />
-                    <div>
-                      <div className="flex items-baseline justify-between gap-4">
-                        <strong className="text-base text-neutral">
-                          {item.name}
-                        </strong>
-                        <span className="badge badge-outline border-base-300 px-3 py-2 text-sm text-base-content/70">
-                          {item.category}
-                        </span>
+                <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
+                  選択したアイテム
+                </h2>
+                <p className="mt-2 text-base text-base-content/60">
+                  行動時に使うアイテムを選択してください。
+                </p>
+                <div className="mt-4 flex flex-col gap-3">
+                  {sceneItems.map((item) => (
+                    <label
+                      key={item.id}
+                      className={[
+                        'card grid cursor-pointer grid-cols-[20px_minmax(0,1fr)] gap-3 border p-3 transition',
+                        availableActiveItemIds.includes(item.id)
+                          ? 'border-primary bg-base-100'
+                          : 'border-base-300 bg-base-100/75 hover:border-secondary hover:bg-base-100',
+                      ].join(' ')}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={availableActiveItemIds.includes(item.id)}
+                        onChange={() => handleToggleActiveItem(item.id)}
+                        className="checkbox checkbox-primary checkbox-sm mt-1"
+                      />
+                      <div>
+                        <div className="flex items-baseline justify-between gap-4">
+                          <strong className="text-base text-neutral">
+                            {item.name}
+                          </strong>
+                          <span className="badge badge-outline border-base-300 px-3 py-2 text-sm text-base-content/70">
+                            {item.category}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-base leading-7 text-base-content">
+                          {item.description}
+                        </p>
                       </div>
-                      <p className="mt-2 text-base leading-7 text-base-content">
-                        {item.description}
-                      </p>
-                    </div>
-                  </label>
-                ))}
-              </div>
+                    </label>
+                  ))}
+                </div>
               </div>
             </section>
           </aside>
 
           <section className="card border border-base-300 bg-base-200/70">
             <div className="card-body p-5">
-            {errorMessage ? (
-              <p className="alert alert-error text-base">
-                {errorMessage}
-              </p>
-            ) : null}
-            <div className="card border border-base-300 bg-base-100/85">
-              <div className="card-body p-4">
-              {generatedScene ? (
-                <div>
-                  <h3 className="font-[var(--heading-font)] text-2xl text-neutral">
-                    {generatedScene.scene_title}
-                  </h3>
-                  <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-base-content">
-                    {formatTextWithLineBreaks(generatedScene.scene_text)}
-                  </p>
-                  {generatedScene.is_ending ? (
-                    <p className="mt-4 text-sm text-base-content/70">
-                      このシーンで物語は決着しています。戻る から過去のシーンを見直せます。
+              {errorMessage ? (
+                <p className="alert alert-error text-base">
+                  {errorMessage}
+                </p>
+              ) : null}
+              <div className="card border border-base-300 bg-base-100/85">
+                <div className="card-body p-4">
+                  {generatedScene ? (
+                    <div>
+                      <h3 className="font-[var(--heading-font)] text-2xl text-neutral">
+                        {generatedScene.scene_title}
+                      </h3>
+                      <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-base-content">
+                        {formatTextWithLineBreaks(generatedScene.scene_text)}
+                      </p>
+                      {generatedScene.is_ending ? (
+                        <p className="mt-4 text-sm text-base-content/70">
+                          このシーンで物語は決着しています。戻る から過去のシーンを見直せます。
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="text-base text-base-content">
+                      シーンを生成しています。しばらく待つと、このシーンの状況が表示されます。
                     </p>
-                  ) : null}
+                  )}
                 </div>
-              ) : (
-                <p className="text-base text-base-content">
-                  シーンを生成しています。しばらく待つと、このシーンの状況が表示されます。
-                </p>
-              )}
               </div>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                className="btn btn-primary disabled:opacity-50"
-                onClick={handleGenerateScene}
-                disabled={isSceneLoading}
-              >
-                {isSceneLoading ? '生成中...' : 'シーン再生成'}
-              </button>
-            </div>
-            <div className="card mt-4 border border-base-300 bg-base-100/85">
-              <div className="card-body p-4">
-              <p className="text-base text-base-content/60">今回使うアイテム</p>
-              {activeItems.length > 0 ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {activeItems.map((item) => (
-                    <span
-                      key={item.id}
-                      className="badge badge-primary h-auto px-3 py-3 text-base"
-                    >
-                      {item.name}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-2 text-base text-base-content">
-                  まだ選択されていません。
-                </p>
-              )}
-              </div>
-            </div>
-            <div className="mt-4">
-              <label
-                htmlFor="player-action"
-                className="text-base text-base-content/60"
-              >
-                ユーザー行動
-              </label>
-              <textarea
-                id="player-action"
-                value={playerAction}
-                onChange={(event) => setPlayerAction(event.target.value)}
-                placeholder="どう行動するか入力"
-                className="textarea textarea-bordered mt-2 min-h-[140px] w-full bg-base-100 text-base leading-8 text-base-content placeholder:text-base-content/50"
-              />
               <div className="mt-4 flex justify-end">
                 <button
                   type="button"
-                  className="btn btn-primary"
-                  onClick={handleConfirmAction}
-                  disabled={isConfirmActionDisabled}
+                  className="btn btn-primary disabled:opacity-50"
+                  onClick={handleGenerateScene}
+                  disabled={isSceneLoading}
                 >
-                  {isJudgeLoading ? '判定中...' : '行動を確定'}
+                  {isSceneLoading ? '生成中...' : 'シーン再生成'}
                 </button>
               </div>
-            </div>
-            {judgeResult ? (
               <div className="card mt-4 border border-base-300 bg-base-100/85">
                 <div className="card-body p-4">
-                <p className="text-base leading-8 text-base-content">
-                  {judgeResult.message}
-                </p>
-                {judgeResult.needs_roll ? (
-                  <div className="mt-3 flex flex-wrap gap-3 text-base text-base-content">
-                    <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
-                      能力値: {abilityLabels[judgeResult.ability as keyof typeof abilityLabels] || judgeResult.ability}
-                    </span>
-                    <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
-                      技能: {judgeResult.skill}
-                    </span>
-                    <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
-                      難易度: {judgeResult.difficulty}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="mt-3 text-base text-base-content/60">
-                    判定不要
-                  </p>
-                )}
+                  <p className="text-base text-base-content/60">今回使うアイテム</p>
+                  {activeItems.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {activeItems.map((item) => (
+                        <span
+                          key={item.id}
+                          className="badge badge-primary h-auto px-3 py-3 text-base"
+                        >
+                          {item.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-base text-base-content">
+                      まだ選択されていません。
+                    </p>
+                  )}
                 </div>
               </div>
-            ) : null}
-            {judgeResult?.needs_roll ? (
-              <div className="card mt-4 border border-base-300 bg-base-100/85">
-                <div className="card-body p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-base text-base-content/60">d20 判定</p>
-                    <p className="mt-1 text-base text-base-content">
-                      {judgeResult.ability
-                        ? `${abilityLabels[judgeResult.ability as keyof typeof abilityLabels]}修正 ${modifier >= 0 ? `+${modifier}` : modifier}`
-                        : '修正値 0'}
+              <div className="mt-4">
+                <label
+                  htmlFor="player-action"
+                  className="text-base text-base-content/60"
+                >
+                  ユーザー行動
+                </label>
+                <textarea
+                  id="player-action"
+                  value={playerAction}
+                  onChange={(event) => setPlayerAction(event.target.value)}
+                  placeholder="どう行動するか入力"
+                  className="textarea textarea-bordered mt-2 min-h-[140px] w-full bg-base-100 text-base leading-8 text-base-content placeholder:text-base-content/50"
+                />
+                <div className="mt-4 flex justify-end">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleConfirmAction}
+                    disabled={isConfirmActionDisabled}
+                  >
+                    {isJudgeLoading ? '判定中...' : '行動を確定'}
+                  </button>
+                </div>
+              </div>
+              {judgeResult ? (
+                <div className="card mt-4 border border-base-300 bg-base-100/85">
+                  <div className="card-body p-4">
+                    <p className="text-base leading-8 text-base-content">
+                      {judgeResult.message}
                     </p>
+                    {judgeResult.needs_roll ? (
+                      <div className="mt-3 flex flex-wrap gap-3 text-base text-base-content">
+                        <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
+                          能力値: {abilityLabels[judgeResult.ability as keyof typeof abilityLabels] || judgeResult.ability}
+                        </span>
+                        <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
+                          技能: {judgeResult.skill}
+                        </span>
+                        <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
+                          難易度: {judgeResult.difficulty}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-base text-base-content/60">
+                        判定不要
+                      </p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3">
-                    {IS_DEV ? (
-                      <button
-                        type="button"
-                        className="btn btn-outline"
-                        onClick={handleRerollDice}
-                        disabled={diceRoll === null}
-                      >
-                        振り直し
-                      </button>
+                </div>
+              ) : null}
+              {judgeResult?.needs_roll ? (
+                <div className="card mt-4 border border-base-300 bg-base-100/85">
+                  <div className="card-body p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-base text-base-content/60">d20 判定</p>
+                        <p className="mt-1 text-base text-base-content">
+                          {judgeResult.ability
+                            ? `${abilityLabels[judgeResult.ability as keyof typeof abilityLabels]}修正 ${modifier >= 0 ? `+${modifier}` : modifier}`
+                            : '修正値 0'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {IS_DEV ? (
+                          <button
+                            type="button"
+                            className="btn btn-outline"
+                            onClick={handleRerollDice}
+                            disabled={diceRoll === null}
+                          >
+                            振り直し
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="btn btn-primary disabled:opacity-50"
+                          onClick={handleRollDice}
+                          disabled={!isRolling}
+                        >
+                          決定
+                        </button>
+                      </div>
+                    </div>
+                    <div className="stats stats-vertical mt-4 grid grid-cols-5 gap-3 bg-transparent shadow-none lg:stats-horizontal">
+                      <div className="stat rounded-2xl border border-primary bg-base-100 text-center">
+                        <p className="stat-title text-base-content/60">出目</p>
+                        <p className="stat-value mt-2 text-4xl font-bold leading-none text-neutral">
+                          {displayRoll ?? '-'}
+                        </p>
+                      </div>
+                      <div className="stat rounded-xl border border-base-300 bg-base-200/70">
+                        <p className="stat-title text-base-content/60">修正値</p>
+                        <p className="stat-value mt-1 text-lg font-semibold text-neutral">
+                          {modifier >= 0 ? `+${modifier}` : modifier}
+                        </p>
+                      </div>
+                      <div className="stat rounded-xl border border-base-300 bg-base-200/70">
+                        <p className="stat-title text-base-content/60">合計</p>
+                        <p className="stat-value mt-1 text-lg font-semibold text-neutral">
+                          {totalRoll ?? '-'}
+                        </p>
+                      </div>
+                      <div className="stat rounded-xl border border-base-300 bg-base-200/70">
+                        <p className="stat-title text-base-content/60">目標値</p>
+                        <p className="stat-value mt-1 text-lg font-semibold text-neutral">
+                          {judgeResult.difficulty ?? '-'}
+                        </p>
+                      </div>
+                      <div className="stat rounded-xl border border-base-300 bg-base-200/70">
+                        <p className="stat-title text-base-content/60">結果</p>
+                        <p className="stat-value mt-1 text-lg font-semibold text-neutral">
+                          {isSuccess === null ? '-' : isSuccess ? '成功' : '失敗'}
+                        </p>
+                      </div>
+                    </div>
+                    {canAdvanceScene ? (
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={handleNextScene}
+                        >
+                          {nextButtonLabel}
+                        </button>
+                      </div>
                     ) : null}
-                    <button
-                      type="button"
-                      className="btn btn-primary disabled:opacity-50"
-                      onClick={handleRollDice}
-                      disabled={!isRolling}
-                    >
-                      決定
-                    </button>
                   </div>
                 </div>
-                <div className="stats stats-vertical mt-4 grid grid-cols-5 gap-3 bg-transparent shadow-none lg:stats-horizontal">
-                  <div className="stat rounded-2xl border border-primary bg-base-100 text-center">
-                    <p className="stat-title text-base-content/60">出目</p>
-                    <p className="stat-value mt-2 text-4xl font-bold leading-none text-neutral">
-                      {displayRoll ?? '-'}
-                    </p>
-                  </div>
-                  <div className="stat rounded-xl border border-base-300 bg-base-200/70">
-                    <p className="stat-title text-base-content/60">修正値</p>
-                    <p className="stat-value mt-1 text-lg font-semibold text-neutral">
-                      {modifier >= 0 ? `+${modifier}` : modifier}
-                    </p>
-                  </div>
-                  <div className="stat rounded-xl border border-base-300 bg-base-200/70">
-                    <p className="stat-title text-base-content/60">合計</p>
-                    <p className="stat-value mt-1 text-lg font-semibold text-neutral">
-                      {totalRoll ?? '-'}
-                    </p>
-                  </div>
-                  <div className="stat rounded-xl border border-base-300 bg-base-200/70">
-                    <p className="stat-title text-base-content/60">目標値</p>
-                    <p className="stat-value mt-1 text-lg font-semibold text-neutral">
-                      {judgeResult.difficulty ?? '-'}
-                    </p>
-                  </div>
-                  <div className="stat rounded-xl border border-base-300 bg-base-200/70">
-                    <p className="stat-title text-base-content/60">結果</p>
-                    <p className="stat-value mt-1 text-lg font-semibold text-neutral">
-                      {isSuccess === null ? '-' : isSuccess ? '成功' : '失敗'}
-                    </p>
-                  </div>
-                </div>
-                {canAdvanceScene ? (
-                  <div className="mt-4 flex justify-end">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={handleNextScene}
-                    >
-                      {nextButtonLabel}
-                    </button>
-                  </div>
-                ) : null}
-                </div>
-              </div>
-            ) : null}
+              ) : null}
             </div>
           </section>
         </div>
