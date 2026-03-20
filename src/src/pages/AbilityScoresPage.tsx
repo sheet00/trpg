@@ -127,7 +127,7 @@ export function AbilityScoresPage() {
             <h1 className="font-[var(--heading-font)] text-4xl text-neutral">
               能力値
             </h1>
-            <p className="mt-1 text-sm text-base-content">{selectedJob.name}</p>
+            <p className="mt-1 text-base text-base-content">{selectedJob.name}</p>
           </div>
           <div className="flex gap-3">
             <button type="button" className="btn btn-outline" onClick={handleRestart}>
@@ -151,7 +151,7 @@ export function AbilityScoresPage() {
 
         <section className="stats mt-5 grid grid-cols-3 gap-3 bg-transparent shadow-none">
           <div className="stat rounded-2xl border border-base-300 bg-base-200/70">
-            <span className="stat-title text-xs uppercase tracking-[0.18em] text-base-content/60">
+            <span className="stat-title text-sm uppercase tracking-[0.18em] text-base-content/60">
               残りポイント
             </span>
             <strong className="stat-value mt-1 block font-[var(--heading-font)] text-2xl text-neutral">
@@ -159,7 +159,7 @@ export function AbilityScoresPage() {
             </strong>
           </div>
           <div className="stat rounded-2xl border border-base-300 bg-base-200/70">
-            <span className="stat-title text-xs uppercase tracking-[0.18em] text-base-content/60">
+            <span className="stat-title text-sm uppercase tracking-[0.18em] text-base-content/60">
               消費ポイント
             </span>
             <strong className="stat-value mt-1 block font-[var(--heading-font)] text-2xl text-neutral">
@@ -167,7 +167,7 @@ export function AbilityScoresPage() {
             </strong>
           </div>
           <div className="stat rounded-2xl border border-base-300 bg-base-200/70">
-            <span className="stat-title text-xs uppercase tracking-[0.18em] text-base-content/60">
+            <span className="stat-title text-sm uppercase tracking-[0.18em] text-base-content/60">
               選択クラス
             </span>
             <strong className="stat-value mt-1 block font-[var(--heading-font)] text-2xl text-neutral">
@@ -188,7 +188,7 @@ export function AbilityScoresPage() {
                     <span className="font-[var(--heading-font)] text-lg text-neutral">
                       {ability.short}: {ability.label}
                     </span>
-                    <span className="text-sm text-base-content/60">{ability.description}</span>
+                    <span className="text-base text-base-content/60">{ability.description}</span>
                   </div>
                   <div className="grid grid-cols-[minmax(0,1fr)_88px] items-center gap-4">
                     <input
@@ -201,7 +201,7 @@ export function AbilityScoresPage() {
                         handleScoreChange(ability.key, Number(event.target.value))
                       }
                     />
-                    <span className="text-right text-sm text-base-content">
+                    <span className="text-right text-base text-base-content">
                       {score} ({modifier >= 0 ? `+${modifier}` : modifier})
                     </span>
                   </div>

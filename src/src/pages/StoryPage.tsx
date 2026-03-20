@@ -509,7 +509,7 @@ export function StoryPage() {
             <h1 className="font-[var(--heading-font)] text-4xl text-neutral">
               物語開始
             </h1>
-            <p className="mt-2 text-sm text-base-content/60">
+            <p className="mt-2 text-base text-base-content/60">
               現在のターン: {currentTurnNumber}
             </p>
           </div>
@@ -530,8 +530,8 @@ export function StoryPage() {
               <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
                 キャラクター
               </h2>
-              <p className="mt-3 text-base text-base-content">{selectedJob.name}</p>
-              <div className="mt-4 flex flex-col gap-2 text-sm text-base-content">
+              <p className="mt-3 text-lg text-base-content">{selectedJob.name}</p>
+              <div className="mt-4 flex flex-col gap-2 text-base text-base-content">
                 {abilityRows.map(([label, value]) => (
                   <div key={label} className="flex items-center justify-between gap-4">
                     <span className="text-base-content/60">{label}</span>
@@ -547,7 +547,7 @@ export function StoryPage() {
               <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
                 選択したアイテム
               </h2>
-              <p className="mt-2 text-sm text-base-content/60">
+              <p className="mt-2 text-base text-base-content/60">
                 行動時に使うアイテムを選択してください。
               </p>
               <div className="mt-4 flex flex-col gap-3">
@@ -572,11 +572,11 @@ export function StoryPage() {
                         <strong className="text-base text-neutral">
                           {item.name}
                         </strong>
-                        <span className="badge badge-outline badge-sm border-base-300 text-base-content/70">
+                        <span className="badge badge-outline border-base-300 px-3 py-2 text-sm text-base-content/70">
                           {item.category}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-base-content">
+                      <p className="mt-2 text-base leading-7 text-base-content">
                         {item.description}
                       </p>
                     </div>
@@ -593,7 +593,7 @@ export function StoryPage() {
               本編開始
             </h2>
             {errorMessage ? (
-              <p className="alert alert-error mt-4 text-sm">
+              <p className="alert alert-error mt-4 text-base">
                 {errorMessage}
               </p>
             ) : null}
@@ -604,7 +604,7 @@ export function StoryPage() {
                   <h3 className="font-[var(--heading-font)] text-2xl text-neutral">
                     {generatedScene.scene_title}
                   </h3>
-                  <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-base-content">
+                  <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-base-content">
                     {generatedScene.scene_text}
                   </p>
                 </div>
@@ -623,20 +623,20 @@ export function StoryPage() {
             </div>
             <div className="card mt-4 border border-base-300 bg-base-100/85">
               <div className="card-body p-4">
-              <p className="text-sm text-base-content/60">今回使うアイテム</p>
+              <p className="text-base text-base-content/60">今回使うアイテム</p>
               {activeItems.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {activeItems.map((item) => (
                     <span
                       key={item.id}
-                      className="badge badge-primary h-auto px-3 py-3 text-sm"
+                      className="badge badge-primary h-auto px-3 py-3 text-base"
                     >
                       {item.name}
                     </span>
                   ))}
                 </div>
               ) : (
-                <p className="mt-2 text-sm text-base-content">
+                <p className="mt-2 text-base text-base-content">
                   まだ選択されていません。
                 </p>
               )}
@@ -645,7 +645,7 @@ export function StoryPage() {
             <div className="mt-4">
               <label
                 htmlFor="player-action"
-                className="text-sm text-base-content/60"
+                className="text-base text-base-content/60"
               >
                 ユーザー行動
               </label>
@@ -654,7 +654,7 @@ export function StoryPage() {
                 value={playerAction}
                 onChange={(event) => setPlayerAction(event.target.value)}
                 placeholder="どう行動するか入力"
-                className="textarea textarea-bordered mt-2 min-h-[140px] w-full bg-base-100 text-sm leading-7 text-base-content placeholder:text-base-content/50"
+                className="textarea textarea-bordered mt-2 min-h-[140px] w-full bg-base-100 text-base leading-8 text-base-content placeholder:text-base-content/50"
               />
               <div className="mt-4 flex justify-end">
                 <button
@@ -670,11 +670,11 @@ export function StoryPage() {
             {judgeResult ? (
               <div className="card mt-4 border border-base-300 bg-base-100/85">
                 <div className="card-body p-4">
-                <p className="text-sm leading-7 text-base-content">
+                <p className="text-base leading-8 text-base-content">
                   {judgeResult.message}
                 </p>
                 {judgeResult.needs_roll ? (
-                  <div className="mt-3 flex flex-wrap gap-3 text-sm text-base-content">
+                  <div className="mt-3 flex flex-wrap gap-3 text-base text-base-content">
                     <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
                       能力値: {judgeResult.ability}
                     </span>
@@ -686,7 +686,7 @@ export function StoryPage() {
                     </span>
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-base-content/60">
+                  <p className="mt-3 text-base text-base-content/60">
                     判定不要
                   </p>
                 )}
@@ -698,8 +698,8 @@ export function StoryPage() {
                 <div className="card-body p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm text-base-content/60">d20 判定</p>
-                    <p className="mt-1 text-sm text-base-content">
+                    <p className="text-base text-base-content/60">d20 判定</p>
+                    <p className="mt-1 text-base text-base-content">
                       {judgeResult.ability
                         ? `${abilityLabels[judgeResult.ability as keyof typeof abilityLabels]}修正 ${modifier >= 0 ? `+${modifier}` : modifier}`
                         : '修正値 0'}

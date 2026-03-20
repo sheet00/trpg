@@ -60,6 +60,7 @@ body,
 
 body {
   margin: 0;
+  font-size: 17px;
 }
 
 #root {
@@ -90,5 +91,5 @@ dt,
 dd,
 li,
 button {
-  font-size: 16px;
+  font-size: 17px;
 }

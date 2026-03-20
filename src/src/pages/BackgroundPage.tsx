@@ -219,7 +219,7 @@ export function BackgroundPage() {
             <h1 className="font-[var(--heading-font)] text-4xl text-neutral">
               背景設定
             </h1>
-            <p className="mt-1 text-sm text-base-content">{selectedJob.name}</p>
+            <p className="mt-1 text-base text-base-content">{selectedJob.name}</p>
           </div>
           <div className="flex gap-3">
             <button type="button" className="btn btn-outline" onClick={handleRestart}>
@@ -232,7 +232,7 @@ export function BackgroundPage() {
         </div>
 
         <section className="card mt-5 border border-base-300 bg-base-200/70">
-          <div className="card-body gap-2 p-5 text-sm text-base-content">
+          <div className="card-body gap-2 p-5 text-base text-base-content">
           <p>クラス: {selectedJob.name}</p>
           <p>能力値: {formatAbilityScores()}</p>
           </div>
@@ -250,7 +250,7 @@ export function BackgroundPage() {
         </div>
 
         {errorMessage ? (
-          <p className="alert alert-error mt-4 text-sm">
+          <p className="alert alert-error mt-4 text-base">
             {errorMessage}
           </p>
         ) : null}
@@ -275,7 +275,7 @@ export function BackgroundPage() {
                   <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
                     アイテム候補
                   </h2>
-                  <p className="text-sm text-base-content/60">
+                  <p className="text-base text-base-content/60">
                     {selectedItemIds.length} / {MAX_SELECTED_ITEMS} 個選択中
                   </p>
                 </div>
@@ -308,11 +308,11 @@ export function BackgroundPage() {
                             <strong className="text-base text-neutral">
                               {item.name}
                             </strong>
-                            <span className="badge badge-outline badge-sm border-base-300 text-base-content/70">
+                            <span className="badge badge-outline border-base-300 px-3 py-2 text-sm text-base-content/70">
                               {item.category}
                             </span>
                           </div>
-                          <p className="mt-2 text-sm leading-6 text-base-content">
+                          <p className="mt-2 text-base leading-7 text-base-content">
                             {item.description}
                           </p>
                         </div>
@@ -333,7 +333,7 @@ export function BackgroundPage() {
               </section>
             </div>
           ) : (
-            <p className="text-sm text-base-content">
+            <p className="text-base text-base-content">
               生成ボタンを押すと、開始導入とアイテム候補を作成します。
             </p>
           )}

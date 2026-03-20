@@ -36,7 +36,7 @@ export function ClassSelectPage() {
       <section className="mx-auto w-full max-w-[1380px] rounded-[28px] border border-base-300 bg-base-100/95 p-8 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-base-content/60">
+            <p className="text-sm uppercase tracking-[0.24em] text-base-content/60">
               Solo TRPG / Character Setup
             </p>
             <h1 className="mt-3 font-[var(--heading-font)] text-5xl leading-none text-neutral">
@@ -71,7 +71,7 @@ export function ClassSelectPage() {
                   <strong className="font-[var(--heading-font)] text-[30px] leading-none text-neutral">
                     {job.name}
                   </strong>
-                  <span className="text-[15px] leading-7 text-base-content">{job.summary}</span>
+                  <span className="text-base leading-7 text-base-content">{job.summary}</span>
                   <div className="flex flex-wrap gap-2">
                     <span className="badge badge-outline border-secondary text-secondary">
                       戦い方: {job.style}
@@ -79,11 +79,11 @@ export function ClassSelectPage() {
                     <span className="badge badge-outline border-accent text-accent">
                       特徴: {job.feature}
                     </span>
-                    <span className="badge badge-outline border-base-300 text-base-content/70">
+                    <span className="badge badge-outline border-base-300 px-3 py-2 text-sm text-base-content/70">
                       難しさ: {job.difficulty}
                     </span>
                   </div>
-                  <ul className="ml-4 flex list-disc flex-col gap-1 text-sm text-base-content">
+                  <ul className="ml-4 flex list-disc flex-col gap-1 text-base text-base-content">
                     {job.traits.map((trait) => (
                       <li key={trait}>{trait}</li>
                     ))}
@@ -96,13 +96,13 @@ export function ClassSelectPage() {
 
         <section className="mt-8 flex items-end justify-between gap-8 border-t border-base-300 pt-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-base-content/60">
+            <p className="text-sm uppercase tracking-[0.24em] text-base-content/60">
               現在の選択
             </p>
             <p className="mt-2 font-[var(--heading-font)] text-[30px] text-neutral">
               {selectedJob.name}
             </p>
-            <dl className="mt-4 flex gap-8 text-sm">
+            <dl className="mt-4 flex gap-8 text-base">
               <div className="flex flex-col gap-1">
                 <dt className="text-base-content/60">戦い方:</dt>
                 <dd>{selectedJob.style}</dd>
