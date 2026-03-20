@@ -15,9 +15,7 @@ import {
   type SelectedItem,
   type StoryScene,
 } from '../lib/character-storage'
-
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
-const MODEL_NAME = import.meta.env.VITE_MODEL_ID
+import { postChatCompletion } from '../lib/api-client'
 
 function extractTextContent(content: unknown) {
   if (typeof content === 'string') {
@@ -161,11 +159,6 @@ export function EndingPage() {
       return
     }
 
-    if (!OPENROUTER_API_KEY || !MODEL_NAME) {
-      setErrorMessage('.env の API 設定が不足しています。')
-      return
-    }
-
     setIsLoading(true)
     setErrorMessage('')
 
@@ -226,63 +219,44 @@ export function EndingPage() {
     ].join('\n')
 
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'D&D',
-        },
-        body: JSON.stringify({
-          model: MODEL_NAME,
-          messages: [
-            { role: 'system', content: endingPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-          response_format: {
-            type: 'json_schema',
-            json_schema: {
-              name: 'ending_scene_response',
-              strict: true,
-              schema: {
-                type: 'object',
-                additionalProperties: false,
-                properties: {
-                  scene_title: { type: 'string' },
-                  scene_text: { type: 'string' },
-                  is_ending: { type: 'boolean' },
-                  next_is_ending: { type: 'boolean' },
+      const data = await postChatCompletion({
+        messages: [
+          { role: 'system', content: endingPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'ending_scene_response',
+            strict: true,
+            schema: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                scene_title: { type: 'string' },
+                scene_text: { type: 'string' },
+                is_ending: { type: 'boolean' },
+                next_is_ending: { type: 'boolean' },
+                items: {
+                  type: 'array',
                   items: {
-                    type: 'array',
-                    items: {
-                      type: 'object',
-                      additionalProperties: false,
-                      properties: {
-                        id: { type: 'string' },
-                        name: { type: 'string' },
-                        description: { type: 'string' },
-                        category: { type: 'string' },
-                      },
-                      required: ['id', 'name', 'description', 'category'],
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      id: { type: 'string' },
+                      name: { type: 'string' },
+                      description: { type: 'string' },
+                      category: { type: 'string' },
                     },
+                    required: ['id', 'name', 'description', 'category'],
                   },
                 },
-                required: ['scene_title', 'scene_text', 'is_ending', 'next_is_ending', 'items'],
               },
+              required: ['scene_title', 'scene_text', 'is_ending', 'next_is_ending', 'items'],
             },
           },
-        }),
+        },
       })
-
-      const data = (await response.json()) as {
-        error?: { message?: string }
-        choices?: Array<{ message?: { content?: unknown } }>
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error?.message ?? `HTTP error: ${response.status}`)
-      }
 
       const content = extractTextContent(data.choices?.[0]?.message?.content)
 

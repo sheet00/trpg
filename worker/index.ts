@@ -14,11 +14,18 @@ type ChatCompletionRequest = {
   response_format?: unknown;
 };
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       "Content-Type": "application/json",
+      ...corsHeaders,
     },
   });
 }
@@ -45,10 +52,20 @@ function isChatCompletionRequest(
 
 export default {
   async fetch(request: Request, env: Env) {
+    const url = new URL(request.url);
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders,
+      });
+    }
+
     if (request.method === "GET") {
       return jsonResponse({
         message: "OpenRouter proxy worker",
         methods: ["POST"],
+        path: url.pathname,
       });
     }
 
@@ -56,9 +73,14 @@ export default {
       return new Response("Method Not Allowed", {
         status: 405,
         headers: {
+          ...corsHeaders,
           Allow: "GET, POST",
         },
       });
+    }
+
+    if (url.pathname !== "/" && url.pathname !== "/api") {
+      return jsonResponse({ error: "Not Found" }, 404);
     }
 
     if (!env.OPENROUTER_API_KEY) {
@@ -102,6 +124,7 @@ export default {
       status: response.status,
       headers: {
         "Content-Type": "application/json",
+        ...corsHeaders,
       },
     });
   },
