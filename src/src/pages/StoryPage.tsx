@@ -20,7 +20,6 @@ import {
   getStoredStoryScene,
   getStoredStoryTurn,
   getStoredStoryTurns,
-  setStoredSelectedItems,
   setStoredActiveItemIds,
   setStoredDiceRoll,
   setStoredJudgeResult,
@@ -29,6 +28,7 @@ import {
   setStoredStoryTurn,
   setStoredStories,
   type JudgeResult,
+  type SelectedItem,
   type StoryScene,
   type StoryTurn,
 } from '../lib/character-storage'
@@ -145,7 +145,6 @@ export function StoryPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedClassId = getStoredClassId()
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
-  const selectedItems = getStoredSelectedItems()
   const backgroundData = getStoredBackgroundData()
   const abilityRows = getAbilityRows()
   const turnFromSearchParams = Number(searchParams.get('turn') ?? '1')
@@ -155,20 +154,21 @@ export function StoryPage() {
   const [judgeResult, setJudgeResult] = useState<JudgeResult | null>(null)
   const [diceRoll, setDiceRoll] = useState<number | null>(null)
   const [rollingValue, setRollingValue] = useState<number>(1)
+  const [turnItems, setTurnItems] = useState<SelectedItem[]>([])
   const [activeItemIds, setActiveItemIdsState] = useState<string[]>([])
   const [playerAction, setPlayerActionState] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [isSceneLoading, setIsSceneLoading] = useState(false)
   const [isJudgeLoading, setIsJudgeLoading] = useState(false)
 
-  if (!selectedJob || selectedItems.length === 0 || !backgroundData) {
+  if (!selectedJob || !backgroundData) {
     return <Navigate to="/background" replace />
   }
 
   const availableActiveItemIds = activeItemIds.filter((itemId) =>
-    selectedItems.some((item) => item.id === itemId),
+    turnItems.some((item) => item.id === itemId),
   )
-  const activeItems = selectedItems.filter((item) =>
+  const activeItems = turnItems.filter((item) =>
     availableActiveItemIds.includes(item.id),
   )
   const isRolling = judgeResult?.needs_roll === true && diceRoll === null
@@ -195,6 +195,7 @@ export function StoryPage() {
       const migratedTurn = {
         turnNumber: 1,
         scene: getStoredStoryScene(),
+        items: getStoredSelectedItems(),
         activeItemIds: getStoredActiveItemIds(),
         playerAction: getStoredPlayerAction(),
         judgeResult: getStoredJudgeResult(),
@@ -203,6 +204,7 @@ export function StoryPage() {
 
       const hasLegacyState =
         migratedTurn.scene !== null ||
+        migratedTurn.items.length > 0 ||
         migratedTurn.activeItemIds.length > 0 ||
         migratedTurn.playerAction !== '' ||
         migratedTurn.judgeResult !== null ||
@@ -214,7 +216,20 @@ export function StoryPage() {
       }
     }
 
+    if (storedTurn.items.length === 0 && currentTurnNumber > 0) {
+      const previousTurn = getStoredStoryTurn(currentTurnNumber - 1)
+
+      if (previousTurn.items.length > 0) {
+        storedTurn = {
+          ...storedTurn,
+          items: previousTurn.items,
+        }
+        setStoredStoryTurn(storedTurn)
+      }
+    }
+
     setGeneratedScene(storedTurn.scene)
+    setTurnItems(storedTurn.items)
     setJudgeResult(storedTurn.judgeResult)
     setDiceRoll(storedTurn.diceRoll)
     setActiveItemIdsState(storedTurn.activeItemIds)
@@ -263,6 +278,7 @@ export function StoryPage() {
     setStoredStoryTurn({
       turnNumber: currentTurnNumber,
       scene: generatedScene,
+      items: turnItems,
       activeItemIds: availableActiveItemIds,
       playerAction,
       judgeResult,
@@ -317,6 +333,7 @@ export function StoryPage() {
       .map((turn) => ({
         turnNumber: turn.turnNumber,
         scene: turn.scene,
+        items: turn.items,
         playerAction: turn.playerAction,
         activeItemIds: turn.activeItemIds,
         resolution: getTurnResolution(turn),
@@ -346,7 +363,7 @@ export function StoryPage() {
       ),
       '',
       '# items',
-      JSON.stringify(selectedItems, null, 2),
+      JSON.stringify(turnItems, null, 2),
       '',
       '# story_history',
       JSON.stringify(storyTurns, null, 2),
@@ -425,27 +442,33 @@ export function StoryPage() {
         throw new Error('生成結果が空でした。')
       }
 
-      const parsed = JSON.parse(content) as StoryScene
+      const parsed = JSON.parse(content) as StoryScene & { items: SelectedItem[] }
       clearFutureTurns()
       const nextActiveItemIds = availableActiveItemIds.filter((itemId) =>
         parsed.items.some((item) => item.id === itemId),
       )
-      setGeneratedScene(parsed)
-      setStoredSelectedItems(parsed.items)
+      const nextScene = {
+        scene_title: parsed.scene_title,
+        scene_text: parsed.scene_text,
+      }
+      setGeneratedScene(nextScene)
+      setTurnItems(parsed.items)
       setActiveItemIdsState(nextActiveItemIds)
       setStoredActiveItemIds(nextActiveItemIds)
-      setStoredStoryScene(parsed)
+      setStoredStoryScene(nextScene)
       const nextStories = getStoredStoryTurns()
         .filter((turn) => turn.turnNumber <= currentTurnNumber)
         .map((turn) =>
-          turn.turnNumber === currentTurnNumber ? parsed : turn.scene,
+          turn.turnNumber === currentTurnNumber ? nextScene : turn.scene,
         )
         .filter((scene): scene is StoryScene => scene !== null)
 
       setStoredStories(nextStories)
       persistTurn((turn) => ({
         ...turn,
-        scene: parsed,
+        scene: nextScene,
+        items: parsed.items,
+        activeItemIds: nextActiveItemIds,
       }))
     } catch (error) {
       setErrorMessage(
@@ -478,6 +501,7 @@ export function StoryPage() {
         .map((turn) => ({
           turnNumber: turn.turnNumber,
           scene: turn.scene,
+          items: turn.items,
           playerAction: turn.playerAction,
           activeItemIds: turn.activeItemIds,
           resolution: getTurnResolution(turn),
@@ -502,10 +526,10 @@ export function StoryPage() {
           },
           null,
           2,
-        ),
-        '',
-        '# owned_items',
-        JSON.stringify(selectedItems, null, 2),
+      ),
+      '',
+      '# owned_items',
+      JSON.stringify(turnItems, null, 2),
         '',
         '# active_items',
         JSON.stringify(activeItems, null, 2),
@@ -605,6 +629,7 @@ export function StoryPage() {
       setRollingValue(Math.floor(Math.random() * 20) + 1)
       persistTurn((turn) => ({
         ...turn,
+        items: turnItems,
         judgeResult: parsed,
         diceRoll: null,
         playerAction: trimmedAction,
@@ -657,12 +682,16 @@ export function StoryPage() {
 
     if (
       nextTurn.scene === null &&
+      nextTurn.items.length === 0 &&
       nextTurn.activeItemIds.length === 0 &&
       nextTurn.playerAction === '' &&
       nextTurn.judgeResult === null &&
       nextTurn.diceRoll === null
     ) {
-      setStoredStoryTurn(createEmptyStoryTurn(nextTurnNumber))
+      setStoredStoryTurn({
+        ...createEmptyStoryTurn(nextTurnNumber),
+        items: turnItems,
+      })
     }
 
     setSearchParams({ turn: String(nextTurnNumber) })
@@ -736,7 +765,7 @@ export function StoryPage() {
                 行動時に使うアイテムを選択してください。
               </p>
               <div className="mt-4 flex flex-col gap-3">
-                {selectedItems.map((item) => (
+                {turnItems.map((item) => (
                   <label
                     key={item.id}
                     className={[

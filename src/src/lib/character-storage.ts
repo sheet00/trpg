@@ -50,7 +50,6 @@ export type BackgroundData = {
 export type StoryScene = {
   scene_title: string
   scene_text: string
-  items: SelectedItem[]
 }
 
 export type JudgeResult = {
@@ -64,6 +63,7 @@ export type JudgeResult = {
 export type StoryTurn = {
   turnNumber: number
   scene: StoryScene | null
+  items: SelectedItem[]
   activeItemIds: string[]
   playerAction: string
   judgeResult: JudgeResult | null
@@ -218,17 +218,7 @@ export function getStoredStoryScene() {
       typeof parsed === 'object' &&
       parsed !== null &&
       typeof parsed.scene_title === 'string' &&
-      typeof parsed.scene_text === 'string' &&
-      Array.isArray(parsed.items) &&
-      parsed.items.every(
-        (item) =>
-          typeof item === 'object' &&
-          item !== null &&
-          typeof item.id === 'string' &&
-          typeof item.name === 'string' &&
-          typeof item.description === 'string' &&
-          typeof item.category === 'string',
-      )
+      typeof parsed.scene_text === 'string'
     ) {
       return parsed as StoryScene
     }
@@ -262,17 +252,7 @@ export function getStoredStories() {
         typeof item === 'object' &&
         item !== null &&
         typeof item.scene_title === 'string' &&
-        typeof item.scene_text === 'string' &&
-        Array.isArray(item.items) &&
-        item.items.every(
-          (storyItem) =>
-            typeof storyItem === 'object' &&
-            storyItem !== null &&
-            typeof storyItem.id === 'string' &&
-            typeof storyItem.name === 'string' &&
-            typeof storyItem.description === 'string' &&
-            typeof storyItem.category === 'string',
-        ),
+        typeof item.scene_text === 'string',
     )
   } catch {
     return []
@@ -374,22 +354,7 @@ function isStoryScene(value: unknown): value is StoryScene {
     'scene_title' in value &&
     typeof value.scene_title === 'string' &&
     'scene_text' in value &&
-    typeof value.scene_text === 'string' &&
-    'items' in value &&
-    Array.isArray(value.items) &&
-    value.items.every(
-      (item) =>
-        typeof item === 'object' &&
-        item !== null &&
-        'id' in item &&
-        typeof item.id === 'string' &&
-        'name' in item &&
-        typeof item.name === 'string' &&
-        'description' in item &&
-        typeof item.description === 'string' &&
-        'category' in item &&
-        typeof item.category === 'string',
-    )
+    typeof value.scene_text === 'string'
   )
 }
 
@@ -414,6 +379,7 @@ export function createEmptyStoryTurn(turnNumber: number): StoryTurn {
   return {
     turnNumber,
     scene: null,
+    items: [],
     activeItemIds: [],
     playerAction: '',
     judgeResult: null,
@@ -442,6 +408,16 @@ export function getStoredStoryTurns() {
           item !== null &&
           typeof item.turnNumber === 'number' &&
           (item.scene === null || isStoryScene(item.scene)) &&
+          Array.isArray(item.items) &&
+          item.items.every(
+            (storyItem) =>
+              typeof storyItem === 'object' &&
+              storyItem !== null &&
+              typeof storyItem.id === 'string' &&
+              typeof storyItem.name === 'string' &&
+              typeof storyItem.description === 'string' &&
+              typeof storyItem.category === 'string',
+          ) &&
           Array.isArray(item.activeItemIds) &&
           item.activeItemIds.every((activeItemId) => typeof activeItemId === 'string') &&
           typeof item.playerAction === 'string' &&

@@ -5,12 +5,14 @@ import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
 import {
   clearAllStoredGameData,
+  createEmptyStoryTurn,
   getStoredAbilityScores,
   getStoredBackgroundData,
   getStoredBackgroundSelection,
   getStoredClassId,
   setStoredBackgroundData,
   setStoredBackgroundSelection,
+  setStoredStoryTurn,
   type SelectedItem,
   setStoredSelectedItems,
 } from '../lib/character-storage'
@@ -222,6 +224,11 @@ export function BackgroundPage() {
     )
 
     setStoredSelectedItems(selectedItems)
+    setStoredStoryTurn({
+      ...createEmptyStoryTurn(0),
+      turnNumber: 0,
+      items: selectedItems,
+    })
     navigate('/story')
   }
 
