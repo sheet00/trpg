@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import gmPrompt from '../assets/02_gm.md?raw'
 import judgePrompt from '../assets/03_judge.md?raw'
 import { characterClasses } from '../data/classes'
 import {
+  createEmptyStoryTurn,
   getStoredActiveItemIds,
   getStoredBackgroundData,
   getStoredAbilityScores,
@@ -14,14 +15,17 @@ import {
   getStoredSelectedItems,
   getStoredStories,
   getStoredStoryScene,
+  getStoredStoryTurn,
   setStoredActiveItemIds,
   setStoredDiceRoll,
   setStoredJudgeResult,
   setStoredPlayerAction,
   setStoredStoryScene,
+  setStoredStoryTurn,
   setStoredStories,
   type JudgeResult,
   type StoryScene,
+  type StoryTurn,
 } from '../lib/character-storage'
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
@@ -103,23 +107,21 @@ function getAbilityModifier(ability: string | null) {
 }
 
 export function StoryPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const selectedClassId = getStoredClassId()
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
   const selectedItems = getStoredSelectedItems()
   const backgroundData = getStoredBackgroundData()
   const abilityRows = getAbilityRows()
-  const [generatedScene, setGeneratedScene] = useState<StoryScene | null>(() =>
-    getStoredStoryScene(),
-  )
-  const [judgeResult, setJudgeResult] = useState<JudgeResult | null>(() =>
-    getStoredJudgeResult(),
-  )
-  const [diceRoll, setDiceRoll] = useState<number | null>(() => getStoredDiceRoll())
+  const turnFromSearchParams = Number(searchParams.get('turn') ?? '1')
+  const currentTurnNumber =
+    Number.isInteger(turnFromSearchParams) && turnFromSearchParams > 0 ? turnFromSearchParams : 1
+  const [generatedScene, setGeneratedScene] = useState<StoryScene | null>(null)
+  const [judgeResult, setJudgeResult] = useState<JudgeResult | null>(null)
+  const [diceRoll, setDiceRoll] = useState<number | null>(null)
   const [rollingValue, setRollingValue] = useState<number>(1)
-  const [activeItemIds, setActiveItemIdsState] = useState<string[]>(() =>
-    getStoredActiveItemIds(),
-  )
-  const [playerAction, setPlayerActionState] = useState(() => getStoredPlayerAction())
+  const [activeItemIds, setActiveItemIdsState] = useState<string[]>([])
+  const [playerAction, setPlayerActionState] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -136,6 +138,55 @@ export function StoryPage() {
   const isRolling = judgeResult?.needs_roll === true && diceRoll === null
 
   useEffect(() => {
+    if (searchParams.get('turn') === String(currentTurnNumber)) {
+      return
+    }
+
+    setSearchParams({ turn: String(currentTurnNumber) }, { replace: true })
+  }, [currentTurnNumber, searchParams, setSearchParams])
+
+  useEffect(() => {
+    let storedTurn = getStoredStoryTurn(currentTurnNumber)
+
+    if (
+      currentTurnNumber === 1 &&
+      storedTurn.scene === null &&
+      storedTurn.activeItemIds.length === 0 &&
+      storedTurn.playerAction === '' &&
+      storedTurn.judgeResult === null &&
+      storedTurn.diceRoll === null
+    ) {
+      const migratedTurn = {
+        turnNumber: 1,
+        scene: getStoredStoryScene(),
+        activeItemIds: getStoredActiveItemIds(),
+        playerAction: getStoredPlayerAction(),
+        judgeResult: getStoredJudgeResult(),
+        diceRoll: getStoredDiceRoll(),
+      }
+
+      const hasLegacyState =
+        migratedTurn.scene !== null ||
+        migratedTurn.activeItemIds.length > 0 ||
+        migratedTurn.playerAction !== '' ||
+        migratedTurn.judgeResult !== null ||
+        migratedTurn.diceRoll !== null
+
+      if (hasLegacyState) {
+        setStoredStoryTurn(migratedTurn)
+        storedTurn = migratedTurn
+      }
+    }
+
+    setGeneratedScene(storedTurn.scene)
+    setJudgeResult(storedTurn.judgeResult)
+    setDiceRoll(storedTurn.diceRoll)
+    setActiveItemIdsState(storedTurn.activeItemIds)
+    setPlayerActionState(storedTurn.playerAction)
+    setErrorMessage('')
+  }, [currentTurnNumber])
+
+  useEffect(() => {
     if (!isRolling) {
       return
     }
@@ -149,9 +200,18 @@ export function StoryPage() {
     }
   }, [isRolling])
 
+  const persistTurn = (updater: (turn: StoryTurn) => StoryTurn) => {
+    const currentTurn = getStoredStoryTurn(currentTurnNumber)
+    setStoredStoryTurn(updater(currentTurn))
+  }
+
   const setPlayerAction = (value: string) => {
     setPlayerActionState(value)
     setStoredPlayerAction(value)
+    persistTurn((turn) => ({
+      ...turn,
+      playerAction: value,
+    }))
   }
 
   const handleToggleActiveItem = (itemId: string) => {
@@ -161,6 +221,10 @@ export function StoryPage() {
 
     setActiveItemIdsState(nextIds)
     setStoredActiveItemIds(nextIds)
+    persistTurn((turn) => ({
+      ...turn,
+      activeItemIds: nextIds,
+    }))
   }
 
   const handleGenerateScene = async () => {
@@ -243,6 +307,10 @@ export function StoryPage() {
       setGeneratedScene(parsed)
       setStoredStoryScene(parsed)
       setStoredStories([parsed])
+      persistTurn((turn) => ({
+        ...turn,
+        scene: parsed,
+      }))
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'シーン生成中に不明なエラーが発生しました。',
@@ -378,6 +446,13 @@ export function StoryPage() {
       setDiceRoll(null)
       setStoredDiceRoll(null)
       setRollingValue(Math.floor(Math.random() * 20) + 1)
+      persistTurn((turn) => ({
+        ...turn,
+        judgeResult: parsed,
+        diceRoll: null,
+        playerAction: trimmedAction,
+        activeItemIds: availableActiveItemIds,
+      }))
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'ターン開始中に不明なエラーが発生しました。',
@@ -394,6 +469,21 @@ export function StoryPage() {
 
     setDiceRoll(rollingValue)
     setStoredDiceRoll(rollingValue)
+    persistTurn((turn) => ({
+      ...turn,
+      diceRoll: rollingValue,
+    }))
+  }
+
+  const handleAdvanceTurn = () => {
+    setJudgeResult(null)
+    setStoredJudgeResult(null)
+    setDiceRoll(null)
+    setStoredDiceRoll(null)
+    const nextTurnNumber = currentTurnNumber + 1
+    setStoredStoryTurn(getStoredStoryTurn(currentTurnNumber))
+    setStoredStoryTurn(createEmptyStoryTurn(nextTurnNumber))
+    setSearchParams({ turn: String(nextTurnNumber) })
   }
 
   const modifier = judgeResult?.needs_roll ? getAbilityModifier(judgeResult.ability) : 0
@@ -412,6 +502,9 @@ export function StoryPage() {
             <h1 className="font-[var(--heading-font)] text-4xl text-neutral">
               物語開始
             </h1>
+            <p className="mt-2 text-sm text-base-content/60">
+              現在のターン: {currentTurnNumber}
+            </p>
           </div>
           <Link
             to="/background"
@@ -490,16 +583,6 @@ export function StoryPage() {
             <h2 className="font-[var(--heading-font)] text-3xl text-neutral">
               本編開始
             </h2>
-            <div className="mt-4">
-              <button
-                type="button"
-                className="btn btn-primary disabled:opacity-50"
-                onClick={handleGenerateScene}
-                disabled={isLoading}
-              >
-                {isLoading ? '生成中...' : 'シーン生成'}
-              </button>
-            </div>
             {errorMessage ? (
               <p className="alert alert-error mt-4 text-sm">
                 {errorMessage}
@@ -518,6 +601,16 @@ export function StoryPage() {
                 </div>
               ) : null}
               </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                className="btn btn-primary disabled:opacity-50"
+                onClick={handleGenerateScene}
+                disabled={isLoading}
+              >
+                {isLoading ? '生成中...' : 'シーン生成'}
+              </button>
             </div>
             <div className="card mt-4 border border-base-300 bg-base-100/85">
               <div className="card-body p-4">
@@ -554,6 +647,16 @@ export function StoryPage() {
                 placeholder="どう行動するか入力"
                 className="textarea textarea-bordered mt-2 min-h-[140px] w-full bg-base-100 text-sm leading-7 text-base-content placeholder:text-base-content/50"
               />
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleStartTurn}
+                  disabled={isLoading}
+                >
+                  {isLoading ? '判定中...' : 'ターン開始'}
+                </button>
+              </div>
             </div>
             {judgeResult ? (
               <div className="card mt-4 border border-base-300 bg-base-100/85">
@@ -634,19 +737,20 @@ export function StoryPage() {
                     </p>
                   </div>
                 </div>
+                {diceRoll !== null ? (
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handleAdvanceTurn}
+                    >
+                      次へ
+                    </button>
+                  </div>
+                ) : null}
                 </div>
               </div>
             ) : null}
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleStartTurn}
-                disabled={isLoading}
-              >
-                {isLoading ? '判定中...' : 'ターン開始'}
-              </button>
-            </div>
             </div>
           </section>
         </div>

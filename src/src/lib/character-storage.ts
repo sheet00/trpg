@@ -8,6 +8,7 @@ const STORIES_KEY = 'trpg:stories'
 const PLAYER_ACTION_KEY = 'trpg:player-action'
 const JUDGE_RESULT_KEY = 'trpg:judge-result'
 const DICE_ROLL_KEY = 'trpg:dice-roll'
+const STORY_TURNS_KEY = 'trpg:story-turns'
 
 export type AbilityScores = {
   strength: number
@@ -41,6 +42,15 @@ export type JudgeResult = {
   skill: string | null
   difficulty: number | null
   message: string
+}
+
+export type StoryTurn = {
+  turnNumber: number
+  scene: StoryScene | null
+  activeItemIds: string[]
+  playerAction: string
+  judgeResult: JudgeResult | null
+  diceRoll: number | null
 }
 
 export const defaultAbilityScores: AbilityScores = {
@@ -288,4 +298,101 @@ export function setStoredDiceRoll(diceRoll: number | null) {
   }
 
   window.localStorage.setItem(DICE_ROLL_KEY, String(diceRoll))
+}
+
+function isStoryScene(value: unknown): value is StoryScene {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'scene_title' in value &&
+    typeof value.scene_title === 'string' &&
+    'scene_text' in value &&
+    typeof value.scene_text === 'string'
+  )
+}
+
+function isJudgeResult(value: unknown): value is JudgeResult {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'needs_roll' in value &&
+    typeof value.needs_roll === 'boolean' &&
+    'message' in value &&
+    typeof value.message === 'string' &&
+    'ability' in value &&
+    (typeof value.ability === 'string' || value.ability === null) &&
+    'skill' in value &&
+    (typeof value.skill === 'string' || value.skill === null) &&
+    'difficulty' in value &&
+    (typeof value.difficulty === 'number' || value.difficulty === null)
+  )
+}
+
+export function createEmptyStoryTurn(turnNumber: number): StoryTurn {
+  return {
+    turnNumber,
+    scene: null,
+    activeItemIds: [],
+    playerAction: '',
+    judgeResult: null,
+    diceRoll: null,
+  }
+}
+
+export function getStoredStoryTurns() {
+  const rawValue = window.localStorage.getItem(STORY_TURNS_KEY)
+
+  if (!rawValue) {
+    return [] as StoryTurn[]
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue)
+
+    if (!Array.isArray(parsed)) {
+      return []
+    }
+
+    return parsed
+      .filter(
+        (item): item is StoryTurn =>
+          typeof item === 'object' &&
+          item !== null &&
+          typeof item.turnNumber === 'number' &&
+          (item.scene === null || isStoryScene(item.scene)) &&
+          Array.isArray(item.activeItemIds) &&
+          item.activeItemIds.every((activeItemId) => typeof activeItemId === 'string') &&
+          typeof item.playerAction === 'string' &&
+          (item.judgeResult === null || isJudgeResult(item.judgeResult)) &&
+          (typeof item.diceRoll === 'number' || item.diceRoll === null),
+      )
+      .sort((left, right) => left.turnNumber - right.turnNumber)
+  } catch {
+    return []
+  }
+}
+
+export function setStoredStoryTurns(turns: StoryTurn[]) {
+  window.localStorage.setItem(STORY_TURNS_KEY, JSON.stringify(turns))
+}
+
+export function getStoredStoryTurn(turnNumber: number) {
+  return (
+    getStoredStoryTurns().find((turn) => turn.turnNumber === turnNumber) ??
+    createEmptyStoryTurn(turnNumber)
+  )
+}
+
+export function setStoredStoryTurn(turn: StoryTurn) {
+  const turns = getStoredStoryTurns()
+  const existingIndex = turns.findIndex((storedTurn) => storedTurn.turnNumber === turn.turnNumber)
+
+  if (existingIndex === -1) {
+    setStoredStoryTurns([...turns, turn].sort((left, right) => left.turnNumber - right.turnNumber))
+    return
+  }
+
+  const nextTurns = [...turns]
+  nextTurns[existingIndex] = turn
+  setStoredStoryTurns(nextTurns)
 }
