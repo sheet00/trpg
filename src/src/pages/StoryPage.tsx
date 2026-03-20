@@ -447,6 +447,8 @@ export function StoryPage() {
 
       const content = extractTextContent(data.choices?.[0]?.message?.content)
 
+      console.log('--- RAW SCENE CONTENT ---', content)
+
       if (!content) {
         throw new Error('生成結果が空でした。')
       }
@@ -597,6 +599,8 @@ export function StoryPage() {
       })
 
       const content = extractTextContent(data.choices?.[0]?.message?.content)
+
+      console.log('--- RAW JUDGE CONTENT ---', content)
 
       if (!content) {
         throw new Error('判定結果が空でした。')
