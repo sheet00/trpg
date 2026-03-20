@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import startPrompt from '../assets/01_start.md?raw'
 import { characterClasses } from '../data/classes'
 import {
+  clearAllStoredGameData,
   getStoredAbilityScores,
   getStoredClassId,
   setStoredBackgroundData,
@@ -205,6 +206,11 @@ export function BackgroundPage() {
     navigate('/story')
   }
 
+  const handleRestart = () => {
+    clearAllStoredGameData()
+    navigate('/class-select', { replace: true })
+  }
+
   return (
     <main className="min-h-screen px-6 py-8" data-theme="light">
       <section className="mx-auto w-full max-w-[980px] rounded-[28px] border border-base-300 bg-base-100/95 p-7 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
@@ -215,12 +221,14 @@ export function BackgroundPage() {
             </h1>
             <p className="mt-1 text-sm text-base-content">{selectedJob.name}</p>
           </div>
-          <Link
-            to="/ability-scores"
-            className="btn btn-outline"
-          >
-            能力値へ戻る
-          </Link>
+          <div className="flex gap-3">
+            <button type="button" className="btn btn-outline" onClick={handleRestart}>
+              最初から
+            </button>
+            <Link to="/ability-scores" className="btn btn-outline">
+              能力値へ戻る
+            </Link>
+          </div>
         </div>
 
         <section className="card mt-5 border border-base-300 bg-base-200/70">

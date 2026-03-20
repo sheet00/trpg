@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import gmPrompt from '../assets/02_gm.md?raw'
 import judgePrompt from '../assets/03_judge.md?raw'
 import { characterClasses } from '../data/classes'
 import {
+  clearAllStoredGameData,
   createEmptyStoryTurn,
   getStoredActiveItemIds,
   getStoredBackgroundData,
@@ -107,6 +108,7 @@ function getAbilityModifier(ability: string | null) {
 }
 
 export function StoryPage() {
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedClassId = getStoredClassId()
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
@@ -486,6 +488,11 @@ export function StoryPage() {
     setSearchParams({ turn: String(nextTurnNumber) })
   }
 
+  const handleRestart = () => {
+    clearAllStoredGameData()
+    navigate('/class-select', { replace: true })
+  }
+
   const modifier = judgeResult?.needs_roll ? getAbilityModifier(judgeResult.ability) : 0
   const displayRoll = diceRoll ?? (isRolling ? rollingValue : null)
   const totalRoll = displayRoll !== null ? displayRoll + modifier : null
@@ -506,12 +513,14 @@ export function StoryPage() {
               現在のターン: {currentTurnNumber}
             </p>
           </div>
-          <Link
-            to="/background"
-            className="btn btn-outline"
-          >
-            背景設定へ戻る
-          </Link>
+          <div className="flex gap-3">
+            <button type="button" className="btn btn-outline" onClick={handleRestart}>
+              最初から
+            </button>
+            <Link to="/background" className="btn btn-outline">
+              背景設定へ戻る
+            </Link>
+          </div>
         </div>
 
         <div className="mt-4 grid grid-cols-[360px_minmax(0,1fr)] gap-4">

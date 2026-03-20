@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { characterClasses } from '../data/classes'
-import { getStoredClassId, setStoredClassId } from '../lib/character-storage'
+import {
+  clearAllStoredGameData,
+  getStoredClassId,
+  setStoredClassId,
+} from '../lib/character-storage'
 
 export function ClassSelectPage() {
   const navigate = useNavigate()
@@ -21,18 +25,31 @@ export function ClassSelectPage() {
     navigate('/ability-scores')
   }
 
+  const handleRestart = () => {
+    clearAllStoredGameData()
+    setSelectedClass(characterClasses[0].id)
+    navigate('/class-select', { replace: true })
+  }
+
   return (
     <main className="min-h-screen px-6 py-8" data-theme="light">
       <section className="mx-auto w-full max-w-[1380px] rounded-[28px] border border-base-300 bg-base-100/95 p-8 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
-        <p className="text-xs uppercase tracking-[0.24em] text-base-content/60">
-          Solo TRPG / Character Setup
-        </p>
-        <h1 className="mt-3 font-[var(--heading-font)] text-5xl leading-none text-neutral">
-          冒険のはじまりに、職業を選ぶ
-        </h1>
-        <p className="mt-5 max-w-3xl text-base text-base-content">
-          あなたの職業を決めてください。
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-base-content/60">
+              Solo TRPG / Character Setup
+            </p>
+            <h1 className="mt-3 font-[var(--heading-font)] text-5xl leading-none text-neutral">
+              冒険のはじまりに、職業を選ぶ
+            </h1>
+            <p className="mt-5 max-w-3xl text-base text-base-content">
+              あなたの職業を決めてください。
+            </p>
+          </div>
+          <button type="button" className="btn btn-outline" onClick={handleRestart}>
+            最初から
+          </button>
+        </div>
 
         <div className="mt-9 grid grid-cols-3 gap-6">
           {characterClasses.map((job) => {

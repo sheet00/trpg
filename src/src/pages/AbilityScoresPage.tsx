@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Navigate, Link } from 'react-router-dom'
+import { Navigate, Link, useNavigate } from 'react-router-dom'
 import { characterClasses } from '../data/classes'
 import {
+  clearAllStoredGameData,
   defaultAbilityScores,
   getStoredAbilityScores,
   getStoredClassId,
@@ -80,6 +81,7 @@ function getModifier(score: number) {
 }
 
 export function AbilityScoresPage() {
+  const navigate = useNavigate()
   const selectedClassId = getStoredClassId()
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
   const [scores, setScores] = useState(() => getStoredAbilityScores())
@@ -112,6 +114,11 @@ export function AbilityScoresPage() {
     setScores(defaultAbilityScores)
   }
 
+  const handleRestart = () => {
+    clearAllStoredGameData()
+    navigate('/class-select', { replace: true })
+  }
+
   return (
     <main className="min-h-screen px-6 py-8" data-theme="light">
       <section className="mx-auto w-full max-w-[980px] rounded-[28px] border border-base-300 bg-base-100/95 p-7 shadow-[0_24px_48px_rgba(12,8,5,0.22)] backdrop-blur-sm">
@@ -123,6 +130,9 @@ export function AbilityScoresPage() {
             <p className="mt-1 text-sm text-base-content">{selectedJob.name}</p>
           </div>
           <div className="flex gap-3">
+            <button type="button" className="btn btn-outline" onClick={handleRestart}>
+              最初から
+            </button>
             <button
               type="button"
               className="btn btn-outline btn-secondary"

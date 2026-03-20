@@ -9,6 +9,19 @@ const PLAYER_ACTION_KEY = 'trpg:player-action'
 const JUDGE_RESULT_KEY = 'trpg:judge-result'
 const DICE_ROLL_KEY = 'trpg:dice-roll'
 const STORY_TURNS_KEY = 'trpg:story-turns'
+const STORAGE_KEYS = [
+  SELECTED_CLASS_KEY,
+  ABILITY_SCORES_KEY,
+  SELECTED_ITEMS_KEY,
+  BACKGROUND_DATA_KEY,
+  STORY_SCENE_KEY,
+  ACTIVE_ITEM_IDS_KEY,
+  STORIES_KEY,
+  PLAYER_ACTION_KEY,
+  JUDGE_RESULT_KEY,
+  DICE_ROLL_KEY,
+  STORY_TURNS_KEY,
+] as const
 
 export type AbilityScores = {
   strength: number
@@ -395,4 +408,10 @@ export function setStoredStoryTurn(turn: StoryTurn) {
   const nextTurns = [...turns]
   nextTurns[existingIndex] = turn
   setStoredStoryTurns(nextTurns)
+}
+
+export function clearAllStoredGameData() {
+  for (const storageKey of STORAGE_KEYS) {
+    window.localStorage.removeItem(storageKey)
+  }
 }
