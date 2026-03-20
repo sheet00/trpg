@@ -25,6 +25,7 @@ import {
   setStoredStoryScene,
   setStoredStoryTurn,
   setStoredStories,
+  getStoredStoryTurns,
   type JudgeResult,
   type StoryScene,
   type StoryTurn,
@@ -222,6 +223,17 @@ export function StoryPage() {
     setStoredStoryTurn(updater(currentTurn))
   }
 
+  const persistCurrentTurnState = () => {
+    setStoredStoryTurn({
+      turnNumber: currentTurnNumber,
+      scene: generatedScene,
+      activeItemIds: availableActiveItemIds,
+      playerAction,
+      judgeResult,
+      diceRoll,
+    })
+  }
+
   const setPlayerAction = (value: string) => {
     setPlayerActionState(value)
     setStoredPlayerAction(value)
@@ -323,7 +335,14 @@ export function StoryPage() {
       const parsed = JSON.parse(content) as StoryScene
       setGeneratedScene(parsed)
       setStoredStoryScene(parsed)
-      setStoredStories([parsed])
+      const nextStories = getStoredStoryTurns()
+        .filter((turn) => turn.turnNumber <= currentTurnNumber)
+        .map((turn) =>
+          turn.turnNumber === currentTurnNumber ? parsed : turn.scene,
+        )
+        .filter((scene): scene is StoryScene => scene !== null)
+
+      setStoredStories(nextStories)
       persistTurn((turn) => ({
         ...turn,
         scene: parsed,
@@ -493,17 +512,30 @@ export function StoryPage() {
   }
 
   const handleAdvanceTurn = () => {
+    persistCurrentTurnState()
     setJudgeResult(null)
     setStoredJudgeResult(null)
     setDiceRoll(null)
     setStoredDiceRoll(null)
     const nextTurnNumber = currentTurnNumber + 1
-    setStoredStoryTurn(getStoredStoryTurn(currentTurnNumber))
-    setStoredStoryTurn(createEmptyStoryTurn(nextTurnNumber))
+    const nextTurn = getStoredStoryTurn(nextTurnNumber)
+
+    if (
+      nextTurn.scene === null &&
+      nextTurn.activeItemIds.length === 0 &&
+      nextTurn.playerAction === '' &&
+      nextTurn.judgeResult === null &&
+      nextTurn.diceRoll === null
+    ) {
+      setStoredStoryTurn(createEmptyStoryTurn(nextTurnNumber))
+    }
+
     setSearchParams({ turn: String(nextTurnNumber) })
   }
 
   const handlePreviousTurn = () => {
+    persistCurrentTurnState()
+
     if (currentTurnNumber === 1) {
       navigate('/background')
       return
