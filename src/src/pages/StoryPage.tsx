@@ -20,6 +20,7 @@ import {
   getStoredStoryScene,
   getStoredStoryTurn,
   getStoredStoryTurns,
+  setStoredSelectedItems,
   setStoredActiveItemIds,
   setStoredDiceRoll,
   setStoredJudgeResult,
@@ -372,8 +373,22 @@ export function StoryPage() {
                 properties: {
                   scene_title: { type: 'string' },
                   scene_text: { type: 'string' },
+                  items: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      additionalProperties: false,
+                      properties: {
+                        id: { type: 'string' },
+                        name: { type: 'string' },
+                        description: { type: 'string' },
+                        category: { type: 'string' },
+                      },
+                      required: ['id', 'name', 'description', 'category'],
+                    },
+                  },
                 },
-                required: ['scene_title', 'scene_text'],
+                required: ['scene_title', 'scene_text', 'items'],
               },
             },
           },
@@ -397,7 +412,13 @@ export function StoryPage() {
 
       const parsed = JSON.parse(content) as StoryScene
       clearFutureTurns()
+      const nextActiveItemIds = availableActiveItemIds.filter((itemId) =>
+        parsed.items.some((item) => item.id === itemId),
+      )
       setGeneratedScene(parsed)
+      setStoredSelectedItems(parsed.items)
+      setActiveItemIdsState(nextActiveItemIds)
+      setStoredActiveItemIds(nextActiveItemIds)
       setStoredStoryScene(parsed)
       const nextStories = getStoredStoryTurns()
         .filter((turn) => turn.turnNumber <= currentTurnNumber)
