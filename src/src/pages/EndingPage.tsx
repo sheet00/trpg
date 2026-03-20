@@ -16,6 +16,7 @@ import {
   type StoryScene,
 } from '../lib/character-storage'
 import { postChatCompletion } from '../lib/api-client'
+import { formatTextWithLineBreaks } from '../lib/text-utils'
 
 function extractTextContent(content: unknown) {
   if (typeof content === 'string') {
@@ -351,7 +352,7 @@ export function EndingPage() {
                     {generatedEnding.scene_title}
                   </h1>
                   <p className="mt-6 whitespace-pre-wrap text-lg leading-9 text-base-content">
-                    {generatedEnding.scene_text}
+                    {formatTextWithLineBreaks(generatedEnding.scene_text)}
                   </p>
                 </>
               ) : (

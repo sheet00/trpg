@@ -33,6 +33,7 @@ import {
   type StorySceneState,
 } from '../lib/character-storage'
 import { postChatCompletion } from '../lib/api-client'
+import { formatTextWithLineBreaks } from '../lib/text-utils'
 const IS_DEV = import.meta.env.DEV
 
 const abilityLabels = {
@@ -831,7 +832,7 @@ export function StoryPage() {
                     {generatedScene.scene_title}
                   </h3>
                   <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-base-content">
-                    {generatedScene.scene_text}
+                    {formatTextWithLineBreaks(generatedScene.scene_text)}
                   </p>
                   {generatedScene.is_ending ? (
                     <p className="mt-4 text-sm text-base-content/70">

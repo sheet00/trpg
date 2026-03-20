@@ -17,6 +17,7 @@ import {
   setStoredSelectedItems,
 } from '../lib/character-storage'
 import { postChatCompletion } from '../lib/api-client'
+import { formatTextWithLineBreaks } from '../lib/text-utils'
 
 type GeneratedItem = SelectedItem
 
@@ -288,11 +289,10 @@ export function BackgroundPage() {
                 <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
                   {generatedBackground.intro_title}
                 </h2>
-                <p className="mt-3 leading-8 text-base-content">
-                  {generatedBackground.intro_text}
+                <p className="mt-3 whitespace-pre-wrap leading-8 text-base-content">
+                  {formatTextWithLineBreaks(generatedBackground.intro_text)}
                 </p>
-                </div>
-              </section>
+                </div>              </section>
 
               <section className="flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
