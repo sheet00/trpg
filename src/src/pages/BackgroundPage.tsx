@@ -97,6 +97,9 @@ export function BackgroundPage() {
   )
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [hasAttemptedAutoGenerate, setHasAttemptedAutoGenerate] = useState(() =>
+    storedBackgroundData?.item_candidates ? true : false,
+  )
 
   if (!selectedJob) {
     return <Navigate to="/class-select" replace />
@@ -224,12 +227,13 @@ export function BackgroundPage() {
   }, [])
 
   useEffect(() => {
-    if (generatedBackground || storedBackgroundData || isLoading) {
+    if (generatedBackground || storedBackgroundData || isLoading || hasAttemptedAutoGenerate) {
       return
     }
 
+    setHasAttemptedAutoGenerate(true)
     void handleGenerate()
-  }, [generatedBackground, isLoading, storedBackgroundData])
+  }, [generatedBackground, hasAttemptedAutoGenerate, isLoading, storedBackgroundData])
 
   return (
     <main className="page-shell" data-theme="light">
