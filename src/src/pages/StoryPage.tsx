@@ -911,7 +911,7 @@ export function StoryPage() {
                 {judgeResult.needs_roll ? (
                   <div className="mt-3 flex flex-wrap gap-3 text-base text-base-content">
                     <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
-                      能力値: {judgeResult.ability}
+                      能力値: {abilityLabels[judgeResult.ability as keyof typeof abilityLabels] || judgeResult.ability}
                     </span>
                     <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
                       技能: {judgeResult.skill}

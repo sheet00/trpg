@@ -51,7 +51,7 @@ Markdown、見出し、箇条書き、補足文は使わないこと。
 {
   "needs_roll": true,
   "ability": "dexterity",
-  "skill": "stealth",
+  "skill": "隠密",
   "difficulty": 12,
   "message": "見張りの視線をかいくぐり、物音を立てずに近づけるかが焦点になります。"
 }
@@ -59,7 +59,7 @@ Markdown、見出し、箇条書き、補足文は使わないこと。
 
 - `needs_roll` は `true` または `false`。
 - `ability` は `strength`, `dexterity`, `constitution`, `intelligence`, `wisdom`, `charisma` のいずれか。判定不要なら `null`。
-- `skill` は適切な技能名の文字列。判定不要なら `null`。
+- `skill` は適切な技能名の文字列（日本語で出力すること。例: 隠密、運動、知覚など）。判定不要なら `null`。
 - `difficulty` は整数。判定不要なら `null`。
 - `message` はプレイヤーに見せる短い文章にする。
 
