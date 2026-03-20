@@ -30,6 +30,10 @@ type GeneratedBackground = {
 
 const MAX_SELECTED_ITEMS = 3
 
+function getAbilityModifier(score: number) {
+  return Math.floor((score - 10) / 2)
+}
+
 function formatAbilityScores() {
   const scores = getStoredAbilityScores()
 
@@ -219,6 +223,8 @@ export function BackgroundPage() {
       return
     }
 
+    const abilityScores = getStoredAbilityScores()
+    const initialHp = Math.max(1, selectedJob.baseHp + getAbilityModifier(abilityScores.constitution))
     const selectedItems = generatedBackground.item_candidates.filter((item) =>
       selectedItemIds.includes(item.id),
     )
@@ -227,6 +233,8 @@ export function BackgroundPage() {
     setStoredStorySceneState({
       ...createEmptyStorySceneState(0),
       sceneNumber: 0,
+      maxHp: initialHp,
+      currentHp: initialHp,
       items: selectedItems,
     })
     navigate('/story')

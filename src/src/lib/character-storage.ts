@@ -88,6 +88,8 @@ export type JudgeResult = {
 export type StorySceneState = {
   sceneNumber: number
   scene: StoryScene | null
+  maxHp: number
+  currentHp: number
   items: SelectedItem[]
   activeItemIds: string[]
   playerAction: string
@@ -383,6 +385,8 @@ export function createEmptyStorySceneState(sceneNumber: number): StorySceneState
   return {
     sceneNumber,
     scene: null,
+    maxHp: 0,
+    currentHp: 0,
     items: [],
     activeItemIds: [],
     playerAction: '',
@@ -412,6 +416,8 @@ export function getStoredStorySceneStates() {
           item !== null &&
           typeof item.sceneNumber === 'number' &&
           (item.scene === null || isStoryScene(item.scene)) &&
+          typeof item.maxHp === 'number' &&
+          typeof item.currentHp === 'number' &&
           Array.isArray(item.items) &&
           item.items.every(
             (storyItem) =>

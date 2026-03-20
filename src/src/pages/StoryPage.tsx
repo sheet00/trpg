@@ -160,6 +160,10 @@ export function StoryPage() {
   const [errorMessage, setErrorMessage] = useState('')
   const [isSceneLoading, setIsSceneLoading] = useState(false)
   const [isJudgeLoading, setIsJudgeLoading] = useState(false)
+  const currentSceneState = getStoredStorySceneState(currentSceneNumber)
+  const maxHp = currentSceneState.maxHp
+  const currentHp = currentSceneState.currentHp
+  const hpRatio = maxHp > 0 ? Math.max(0, Math.min(100, (currentHp / maxHp) * 100)) : 0
 
   if (!selectedJob || !backgroundData) {
     return <Navigate to="/background" replace />
@@ -192,9 +196,12 @@ export function StoryPage() {
       storedSceneState.judgeResult === null &&
       storedSceneState.diceRoll === null
     ) {
+      const previousSceneState = getStoredStorySceneState(0)
       const migratedSceneState = {
         sceneNumber: 1,
         scene: getStoredStoryScene(),
+        maxHp: previousSceneState.maxHp,
+        currentHp: previousSceneState.currentHp,
         items: getStoredSelectedItems(),
         activeItemIds: getStoredActiveItemIds(),
         playerAction: getStoredPlayerAction(),
@@ -219,9 +226,15 @@ export function StoryPage() {
     if (storedSceneState.items.length === 0 && currentSceneNumber > 0) {
       const previousSceneState = getStoredStorySceneState(currentSceneNumber - 1)
 
-      if (previousSceneState.items.length > 0) {
+      if (
+        previousSceneState.items.length > 0 ||
+        previousSceneState.maxHp > 0 ||
+        previousSceneState.currentHp > 0
+      ) {
         storedSceneState = {
           ...storedSceneState,
+          maxHp: previousSceneState.maxHp,
+          currentHp: previousSceneState.currentHp,
           items: previousSceneState.items,
         }
         setStoredStorySceneState(storedSceneState)
@@ -280,6 +293,8 @@ export function StoryPage() {
     setStoredStorySceneState({
       sceneNumber: currentSceneNumber,
       scene: generatedScene,
+      maxHp: currentSceneState.maxHp,
+      currentHp: currentSceneState.currentHp,
       items: sceneItems,
       activeItemIds: availableActiveItemIds,
       playerAction,
@@ -705,6 +720,8 @@ export function StoryPage() {
     ) {
       setStoredStorySceneState({
         ...createEmptyStorySceneState(nextSceneNumber),
+        maxHp: maxHp,
+        currentHp: currentHp,
         items: sceneItems,
       })
     }
@@ -767,9 +784,24 @@ export function StoryPage() {
             <section className="card border border-base-300 bg-base-200/70">
               <div className="card-body p-4">
               <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
-                キャラクター
+                {selectedJob.name}
               </h2>
-              <p className="mt-3 text-lg text-base-content">{selectedJob.name}</p>
+              <div className="mt-4">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm uppercase tracking-[0.18em] text-base-content/60">HP</span>
+                  <strong className="text-lg text-neutral">
+                    {currentHp} / {maxHp}
+                  </strong>
+                </div>
+                <progress
+                  className="progress progress-error mt-2 w-full"
+                  value={currentHp}
+                  max={Math.max(maxHp, 1)}
+                />
+                <p className="mt-2 text-sm text-base-content/60">
+                  残り {Math.round(hpRatio)}%
+                </p>
+              </div>
               <div className="mt-4 flex flex-col gap-2 text-base text-base-content">
                 {abilityRows.map(([label, value]) => (
                   <div key={label} className="flex items-center justify-between gap-4">
