@@ -4,13 +4,21 @@
 {
   "$schema": "src/node_modules/wrangler/config-schema.json",
   "name": "trpg",
+  "main": "./worker/public.ts",
   "compatibility_date": "2024-09-19",
   "compatibility_flags": [
     "nodejs_compat"
   ],
   "assets": {
-    "directory": "./src/dist"
+    "directory": "./src/dist",
+    "binding": "ASSETS"
   },
+  "services": [
+    {
+      "binding": "AI_PROXY",
+      "service": "trpg-worker"
+    }
+  ],
   "observability": {
     "enabled": true
   }
