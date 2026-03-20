@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import gmPrompt from '../assets/02_gm.md?raw'
+import continueGmPrompt from '../assets/04_gm.md?raw'
 import judgePrompt from '../assets/03_judge.md?raw'
 import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
@@ -15,9 +16,9 @@ import {
   getStoredJudgeResult,
   getStoredPlayerAction,
   getStoredSelectedItems,
-  getStoredStories,
   getStoredStoryScene,
   getStoredStoryTurn,
+  getStoredStoryTurns,
   setStoredActiveItemIds,
   setStoredDiceRoll,
   setStoredJudgeResult,
@@ -25,7 +26,6 @@ import {
   setStoredStoryScene,
   setStoredStoryTurn,
   setStoredStories,
-  getStoredStoryTurns,
   type JudgeResult,
   type StoryScene,
   type StoryTurn,
@@ -109,6 +109,21 @@ function getAbilityModifier(ability: string | null) {
   }
 }
 
+function getTurnOutcome(turn: StoryTurn) {
+  if (!turn.judgeResult?.needs_roll) {
+    return turn.judgeResult ? '判定不要' : null
+  }
+
+  if (turn.diceRoll === null || turn.judgeResult.difficulty === null) {
+    return null
+  }
+
+  const modifier = getAbilityModifier(turn.judgeResult.ability)
+  const total = turn.diceRoll + modifier
+
+  return total >= turn.judgeResult.difficulty ? '成功' : '失敗'
+}
+
 export function StoryPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -127,7 +142,8 @@ export function StoryPage() {
   const [activeItemIds, setActiveItemIdsState] = useState<string[]>([])
   const [playerAction, setPlayerActionState] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isSceneLoading, setIsSceneLoading] = useState(false)
+  const [isJudgeLoading, setIsJudgeLoading] = useState(false)
 
   if (!selectedJob || selectedItems.length === 0 || !backgroundData) {
     return <Navigate to="/background" replace />
@@ -197,12 +213,12 @@ export function StoryPage() {
   useEffect(() => {
     const storedTurn = getStoredStoryTurn(currentTurnNumber)
 
-    if (generatedScene || storedTurn.scene || isLoading) {
+    if (generatedScene || storedTurn.scene || isSceneLoading) {
       return
     }
 
     void handleGenerateScene()
-  }, [currentTurnNumber, generatedScene, isLoading])
+  }, [currentTurnNumber, generatedScene, isSceneLoading])
 
   useEffect(() => {
     if (!isRolling) {
@@ -262,26 +278,60 @@ export function StoryPage() {
       return
     }
 
-    setIsLoading(true)
+    setIsSceneLoading(true)
     setErrorMessage('')
+
+    const storyTurns = getStoredStoryTurns()
+      .filter((turn) => turn.turnNumber < currentTurnNumber)
+      .map((turn) => ({
+        turnNumber: turn.turnNumber,
+        scene: turn.scene,
+        playerAction: turn.playerAction,
+        activeItemIds: turn.activeItemIds,
+        judgeResult: turn.judgeResult,
+        diceRoll: turn.diceRoll,
+        outcome: getTurnOutcome(turn),
+      }))
+    const previousTurn = storyTurns.at(-1) ?? null
+    const systemPrompt = currentTurnNumber === 1 ? gmPrompt : continueGmPrompt
 
     const userPrompt = [
       '# background',
-      `title: ${backgroundData.intro_title}`,
-      `text: ${backgroundData.intro_text}`,
+      JSON.stringify(
+        {
+          title: backgroundData.intro_title,
+          text: backgroundData.intro_text,
+        },
+        null,
+        2,
+      ),
       '',
       '# character',
-      `class: ${selectedJob.name}`,
-      '',
-      '# status',
-      ...abilityRows.map(([label, value]) => `${label}: ${value}`),
+      JSON.stringify(
+        {
+          class: selectedJob.name,
+          abilityScores: Object.fromEntries(abilityRows),
+        },
+        null,
+        2,
+      ),
       '',
       '# items',
-      ...selectedItems.map(
-        (item) =>
-          `- ${item.name} | ${item.category} | ${item.description}`,
-      ),
+      JSON.stringify(selectedItems, null, 2),
+      '',
+      '# story_history',
+      JSON.stringify(storyTurns, null, 2),
     ].join('\n')
+
+    const continuePrompt =
+      currentTurnNumber === 1
+        ? userPrompt
+        : [
+            userPrompt,
+            '',
+            '# previous_turn',
+            JSON.stringify(previousTurn, null, 2),
+          ].join('\n')
 
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -295,8 +345,8 @@ export function StoryPage() {
         body: JSON.stringify({
           model: MODEL_NAME,
           messages: [
-            { role: 'system', content: gmPrompt },
-            { role: 'user', content: userPrompt },
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: continuePrompt },
           ],
           response_format: {
             type: 'json_schema',
@@ -352,7 +402,7 @@ export function StoryPage() {
         error instanceof Error ? error.message : 'シーン生成中に不明なエラーが発生しました。',
       )
     } finally {
-      setIsLoading(false)
+      setIsSceneLoading(false)
     }
   }
 
@@ -369,43 +419,65 @@ export function StoryPage() {
       return
     }
 
-    setIsLoading(true)
-    setErrorMessage('')
-
-    const storedStories = getStoredStories()
-    const stories = storedStories.length > 0 ? storedStories : generatedScene ? [generatedScene] : []
-
-    const userPrompt = [
-      '# background',
-      `title: ${backgroundData.intro_title}`,
-      `text: ${backgroundData.intro_text}`,
-      '',
-      '# stories',
-      JSON.stringify(stories, null, 2),
-      '',
-      '# character',
-      `class: ${selectedJob.name}`,
-      '',
-      '# status',
-      ...abilityRows.map(([label, value]) => `${label}: ${value}`),
-      '',
-      '# owned_items',
-      ...selectedItems.map(
-        (item) => `- ${item.name} | ${item.category} | ${item.description}`,
-      ),
-      '',
-      '# active_items',
-      ...(activeItems.length > 0
-        ? activeItems.map(
-            (item) => `- ${item.name} | ${item.category} | ${item.description}`,
-          )
-        : ['- なし']),
-      '',
-      '# player_action',
-      trimmedAction,
-    ].join('\n')
-
     try {
+      setIsJudgeLoading(true)
+      setErrorMessage('')
+
+      const storyTurns = getStoredStoryTurns()
+        .filter((turn) => turn.turnNumber <= currentTurnNumber)
+        .map((turn) => ({
+          turnNumber: turn.turnNumber,
+          scene: turn.scene,
+          playerAction: turn.playerAction,
+          activeItemIds: turn.activeItemIds,
+          judgeResult: turn.judgeResult,
+          diceRoll: turn.diceRoll,
+          outcome: getTurnOutcome(turn),
+        }))
+
+      const userPrompt = [
+        '# background',
+        JSON.stringify(
+          {
+            title: backgroundData.intro_title,
+            text: backgroundData.intro_text,
+          },
+          null,
+          2,
+        ),
+        '',
+        '# character',
+        JSON.stringify(
+          {
+            class: selectedJob.name,
+            abilityScores: Object.fromEntries(abilityRows),
+          },
+          null,
+          2,
+        ),
+        '',
+        '# owned_items',
+        JSON.stringify(selectedItems, null, 2),
+        '',
+        '# active_items',
+        JSON.stringify(activeItems, null, 2),
+        '',
+        '# story_history',
+        JSON.stringify(storyTurns, null, 2),
+        '',
+        '# current_turn',
+        JSON.stringify(
+          {
+            turnNumber: currentTurnNumber,
+            scene: generatedScene,
+            playerAction: trimmedAction,
+            activeItemIds: availableActiveItemIds,
+          },
+          null,
+          2,
+        ),
+      ].join('\n')
+
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -494,7 +566,7 @@ export function StoryPage() {
         error instanceof Error ? error.message : 'ターン開始中に不明なエラーが発生しました。',
       )
     } finally {
-      setIsLoading(false)
+      setIsJudgeLoading(false)
     }
   }
 
@@ -553,6 +625,7 @@ export function StoryPage() {
   const displayRoll = diceRoll ?? (isRolling ? rollingValue : null)
   const totalRoll = displayRoll !== null ? displayRoll + modifier : null
   const isPlayerActionEmpty = playerAction.trim().length === 0
+  const isStartTurnDisabled = isJudgeLoading || isPlayerActionEmpty || !generatedScene
   const isSuccess =
     totalRoll !== null && judgeResult?.difficulty !== null
       ? totalRoll >= judgeResult.difficulty
@@ -666,9 +739,9 @@ export function StoryPage() {
                 type="button"
                 className="btn btn-primary disabled:opacity-50"
                 onClick={handleGenerateScene}
-                disabled={isLoading}
+                disabled={isSceneLoading}
               >
-                {isLoading ? '生成中...' : 'シーン再生成'}
+                {isSceneLoading ? '生成中...' : 'シーン再生成'}
               </button>
             </div>
             <div className="card mt-4 border border-base-300 bg-base-100/85">
@@ -711,9 +784,9 @@ export function StoryPage() {
                   type="button"
                   className="btn btn-primary"
                   onClick={handleStartTurn}
-                  disabled={isLoading || isPlayerActionEmpty}
+                  disabled={isStartTurnDisabled}
                 >
-                  {isLoading ? '判定中...' : 'ターン開始'}
+                  {isJudgeLoading ? '判定中...' : 'ターン開始'}
                 </button>
               </div>
             </div>
