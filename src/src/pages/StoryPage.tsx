@@ -238,7 +238,9 @@ export function StoryPage() {
   }, [currentTurnNumber])
 
   useEffect(() => {
-    document.title = `第${currentTurnNumber}章：${generatedScene?.scene_title ?? '幕開け'} | TRPG`
+    document.title = generatedScene?.scene_title
+      ? `第${currentTurnNumber}章：${generatedScene.scene_title} | TRPG`
+      : `第${currentTurnNumber}章 | TRPG`
   }, [currentTurnNumber, generatedScene?.scene_title])
 
   useEffect(() => {
@@ -718,6 +720,7 @@ export function StoryPage() {
   const totalRoll = displayRoll !== null ? displayRoll + modifier : null
   const isPlayerActionEmpty = playerAction.trim().length === 0
   const isStartTurnDisabled = isJudgeLoading || isPlayerActionEmpty || !generatedScene
+  const canAdvanceTurn = judgeResult !== null && (!judgeResult.needs_roll || diceRoll !== null)
   const isSuccess =
     totalRoll !== null && judgeResult?.difficulty !== null
       ? totalRoll >= judgeResult.difficulty
@@ -726,13 +729,18 @@ export function StoryPage() {
   return (
     <main className="page-shell px-4" data-theme="light">
       <PageHeader
-        title={`第${currentTurnNumber}章：${generatedScene?.scene_title ?? '幕開け'}`}
+        title={`第${currentTurnNumber}章${generatedScene?.scene_title ? `：${generatedScene.scene_title}` : ''}`}
         backAction={{
           label: '戻る',
           onClick: handlePreviousTurn,
           variant: 'outline',
         }}
-        nextAction={{ label: '次へ', onClick: handleAdvanceTurn, variant: 'primary' }}
+        nextAction={{
+          label: '次へ',
+          onClick: handleAdvanceTurn,
+          disabled: !canAdvanceTurn,
+          variant: 'primary',
+        }}
         restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
       />
       <section className="page-panel w-full max-w-[1240px] p-5">
@@ -973,7 +981,7 @@ export function StoryPage() {
                     </p>
                   </div>
                 </div>
-                {diceRoll !== null ? (
+                {canAdvanceTurn ? (
                   <div className="mt-4 flex justify-end">
                     <button
                       type="button"
