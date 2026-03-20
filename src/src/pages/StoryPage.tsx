@@ -227,6 +227,10 @@ export function StoryPage() {
   }, [currentTurnNumber, generatedScene?.scene_title])
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [currentTurnNumber])
+
+  useEffect(() => {
     const storedTurn = getStoredStoryTurn(currentTurnNumber)
 
     if (generatedScene || storedTurn.scene || isSceneLoading) {
