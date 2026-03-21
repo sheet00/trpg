@@ -429,7 +429,7 @@ export function StoryPage() {
 
   useEffect(() => {
     document.title = generatedScene?.scene_title
-      ? `シーン${currentSceneNumber}：${generatedScene.scene_title} | TRPG`
+      ? `シーン${currentSceneNumber} | ${generatedScene.scene_title} | TRPG`
       : `シーン${currentSceneNumber} | TRPG`
   }, [currentSceneNumber, generatedScene?.scene_title])
 

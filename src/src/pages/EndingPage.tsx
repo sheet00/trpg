@@ -97,7 +97,7 @@ export function EndingPage() {
 
   useEffect(() => {
     document.title = generatedEnding?.scene_title
-      ? `エンディング：${generatedEnding.scene_title} | TRPG`
+      ? `エンディング | ${generatedEnding.scene_title} | TRPG`
       : 'エンディング | TRPG'
   }, [generatedEnding?.scene_title])
 
