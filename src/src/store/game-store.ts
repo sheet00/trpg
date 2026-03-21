@@ -46,6 +46,8 @@ type GameActions = {
   setSceneDiceRoll: (sceneNumber: number, diceRoll: number | null) => void
   setScenePlayerAction: (sceneNumber: number, playerAction: string) => void
   setSceneActiveItemIds: (sceneNumber: number, activeItemIds: string[]) => void
+  finalizeSceneSnapshot: (sceneNumber: number, scene: StoryScene | null) => void
+  initializeNextSceneFromCurrent: (sceneNumber: number) => void
 }
 
 const defaultGameState: GameState = {
@@ -180,6 +182,55 @@ export const useGameStore = create<GameState & GameActions>()(
           activeItemIds,
         }))
       },
+      finalizeSceneSnapshot: (sceneNumber, scene) => {
+        set((state) => {
+          const currentSceneState = getSceneStateFromList(state.sceneStates, sceneNumber)
+          return {
+            sceneStates: upsertSceneState(state.sceneStates, {
+              // 過去シーンは不変スナップショットとして扱う。
+              // 画面遷移時に、確定済みの判定結果や出目を消さないため。
+              ...currentSceneState,
+              sceneNumber,
+              scene,
+              activeItemIds: currentSceneState.activeItemIds.filter((itemId) =>
+                currentSceneState.items.some((item) => item.id === itemId),
+              ),
+            }),
+          }
+        })
+      },
+      initializeNextSceneFromCurrent: (sceneNumber) => {
+        set((state) => {
+          const currentSceneState = getSceneStateFromList(state.sceneStates, sceneNumber)
+          const nextSceneNumber = sceneNumber + 1
+          const nextSceneState = getSceneStateFromList(state.sceneStates, nextSceneNumber)
+          // まだ存在しない次シーンだけを初期化する。
+          // 再訪済みシーンの HP・行動・判定結果・出目を上書きしないため。
+          const isEmptyNextScene =
+            nextSceneState.scene === null &&
+            nextSceneState.items.length === 0 &&
+            nextSceneState.activeItemIds.length === 0 &&
+            nextSceneState.playerAction === '' &&
+            nextSceneState.judgeResult === null &&
+            nextSceneState.diceRoll === null &&
+            nextSceneState.maxHp === 0 &&
+            nextSceneState.currentHp === 0
+
+          if (!isEmptyNextScene) {
+            return state
+          }
+
+          return {
+            sceneStates: upsertSceneState(state.sceneStates, {
+              ...createEmptyStorySceneState(nextSceneNumber),
+              sceneNumber: nextSceneNumber,
+              maxHp: currentSceneState.maxHp,
+              currentHp: currentSceneState.currentHp,
+              items: currentSceneState.items,
+            }),
+          }
+        })
+      },
     }),
     {
       name: GAME_STORE_KEY,
@@ -196,4 +247,3 @@ export const useGameStore = create<GameState & GameActions>()(
     },
   ),
 )
-

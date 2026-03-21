@@ -123,6 +123,8 @@ export function StoryPage() {
   const setSceneState = useGameStore((state) => state.setSceneState)
   const updateSceneState = useGameStore((state) => state.updateSceneState)
   const clearSceneStatesAfter = useGameStore((state) => state.clearSceneStatesAfter)
+  const finalizeSceneSnapshot = useGameStore((state) => state.finalizeSceneSnapshot)
+  const initializeNextSceneFromCurrent = useGameStore((state) => state.initializeNextSceneFromCurrent)
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
   const abilityRows = getAbilityRows(abilityScores)
   const sceneFromSearchParams = Number(searchParams.get('scene') ?? searchParams.get('turn') ?? '1')
@@ -160,6 +162,21 @@ export function StoryPage() {
 
     setSearchParams({ scene: String(currentSceneNumber) }, { replace: true })
   }, [currentSceneNumber, searchParams, setSearchParams])
+
+  useEffect(() => {
+    console.log('[StoryPage] currentSceneState snapshot', {
+      currentSceneNumber,
+      sceneTitle: currentSceneState.scene?.scene_title ?? null,
+      maxHp: currentSceneState.maxHp,
+      currentHp: currentSceneState.currentHp,
+      itemsCount: currentSceneState.items.length,
+      activeItemIds: currentSceneState.activeItemIds,
+      playerAction: currentSceneState.playerAction,
+      judgeDifficulty: currentSceneState.judgeResult?.difficulty ?? null,
+      judgeMessage: currentSceneState.judgeResult?.message ?? null,
+      diceRoll: currentSceneState.diceRoll,
+    })
+  }, [currentSceneNumber, currentSceneState])
 
   useEffect(() => {
     if (!selectedJob || !backgroundData) {
@@ -203,7 +220,18 @@ export function StoryPage() {
       }
     }
 
-    if (storedSceneState.items.length === 0 && currentSceneNumber > 0) {
+    const shouldHydrateFromPreviousScene =
+      currentSceneNumber > 0 &&
+      storedSceneState.scene === null &&
+      storedSceneState.items.length === 0 &&
+      storedSceneState.activeItemIds.length === 0 &&
+      storedSceneState.playerAction === '' &&
+      storedSceneState.judgeResult === null &&
+      storedSceneState.diceRoll === null &&
+      storedSceneState.maxHp === 0 &&
+      storedSceneState.currentHp === 0
+
+    if (shouldHydrateFromPreviousScene) {
       const previousSceneState = getSceneState(currentSceneNumber - 1)
 
       if (
@@ -217,6 +245,13 @@ export function StoryPage() {
           currentHp: previousSceneState.currentHp,
           items: previousSceneState.items,
         }
+        console.log('[StoryPage] hydrateFromPreviousScene', {
+          currentSceneNumber,
+          fromSceneNumber: currentSceneNumber - 1,
+          previousMaxHp: previousSceneState.maxHp,
+          previousCurrentHp: previousSceneState.currentHp,
+          previousItems: previousSceneState.items,
+        })
         setSceneState(storedSceneState)
       }
     }
@@ -270,6 +305,10 @@ export function StoryPage() {
         .map((sceneState) => ({
           sceneNumber: sceneState.sceneNumber,
           scene: sceneState.scene,
+          status: {
+            maxHp: sceneState.maxHp,
+            currentHp: sceneState.currentHp,
+          },
           items: sceneState.items,
           playerAction: sceneState.playerAction,
           activeItemIds: sceneState.activeItemIds,
@@ -297,6 +336,10 @@ export function StoryPage() {
           {
             class: selectedJob.name,
             abilityScores: Object.fromEntries(abilityRows),
+            status: {
+              maxHp,
+              currentHp,
+            },
           },
           null,
           2,
@@ -435,20 +478,14 @@ export function StoryPage() {
   }
 
   const persistSceneState = (updater: (sceneState: StorySceneState) => StorySceneState) => {
-    updateSceneState(currentSceneNumber, updater)
-  }
-
-  const persistCurrentSceneState = () => {
-    setSceneState({
-      sceneNumber: currentSceneNumber,
-      scene: generatedScene,
-      maxHp: currentSceneState.maxHp,
-      currentHp: currentSceneState.currentHp,
-      items: sceneItems,
-      activeItemIds: availableActiveItemIds,
-      playerAction,
-      judgeResult,
-      diceRoll,
+    updateSceneState(currentSceneNumber, (sceneState) => {
+      const nextSceneState = updater(sceneState)
+      console.log('[StoryPage] persistSceneState', {
+        sceneNumber: currentSceneNumber,
+        before: sceneState,
+        after: nextSceneState,
+      })
+      return nextSceneState
     })
   }
 
@@ -492,6 +529,10 @@ export function StoryPage() {
       .map((sceneState) => ({
         sceneNumber: sceneState.sceneNumber,
         scene: sceneState.scene,
+        status: {
+          maxHp: sceneState.maxHp,
+          currentHp: sceneState.currentHp,
+        },
         items: sceneState.items,
         playerAction: sceneState.playerAction,
         activeItemIds: sceneState.activeItemIds,
@@ -519,6 +560,10 @@ export function StoryPage() {
         {
           class: selectedJob.name,
           abilityScores: Object.fromEntries(abilityRows),
+          status: {
+            maxHp,
+            currentHp,
+          },
         },
         null,
         2,
@@ -733,6 +778,11 @@ export function StoryPage() {
 
       clearFutureScenes()
       setRollingValue(Math.floor(Math.random() * 20) + 1)
+      console.log('[StoryPage] handleConfirmAction result', {
+        sceneNumber: currentSceneNumber,
+        judgeResult: parsed,
+        playerAction: trimmedAction,
+      })
       persistSceneState((sceneState) => ({
         ...sceneState,
         items: sceneItems,
@@ -755,6 +805,13 @@ export function StoryPage() {
       return
     }
 
+    console.log('[StoryPage] handleRollDice start', {
+      sceneNumber: currentSceneNumber,
+      rollingValue,
+      judgeResult,
+      currentHp,
+      maxHp,
+    })
     persistSceneState((sceneState) => {
       const previousHpChange = getHpChangeFromResolvedRoll(
         sceneState.judgeResult,
@@ -767,11 +824,22 @@ export function StoryPage() {
         abilityScores,
         rollingValue,
       )
+      const nextCurrentHp = applyHpChange(baseHp, sceneState.maxHp, nextHpChange)
+
+      console.log('[StoryPage] handleRollDice resolved', {
+        sceneNumber: currentSceneNumber,
+        previousDiceRoll: sceneState.diceRoll,
+        nextDiceRoll: rollingValue,
+        previousHpChange,
+        nextHpChange,
+        baseHp,
+        nextCurrentHp,
+      })
 
       return {
         ...sceneState,
         diceRoll: rollingValue,
-        currentHp: applyHpChange(baseHp, sceneState.maxHp, nextHpChange),
+        currentHp: nextCurrentHp,
       }
     })
   }
@@ -782,6 +850,14 @@ export function StoryPage() {
     }
 
     const rerolledValue = Math.floor(Math.random() * 20) + 1
+    console.log('[StoryPage] handleRerollDice start', {
+      sceneNumber: currentSceneNumber,
+      previousDiceRoll: diceRoll,
+      rerolledValue,
+      judgeResult,
+      currentHp,
+      maxHp,
+    })
     persistSceneState((sceneState) => {
       const previousHpChange = getHpChangeFromResolvedRoll(
         sceneState.judgeResult,
@@ -794,22 +870,34 @@ export function StoryPage() {
         abilityScores,
         rerolledValue,
       )
+      const nextCurrentHp = applyHpChange(baseHp, sceneState.maxHp, nextHpChange)
+
+      console.log('[StoryPage] handleRerollDice resolved', {
+        sceneNumber: currentSceneNumber,
+        previousDiceRoll: sceneState.diceRoll,
+        nextDiceRoll: rerolledValue,
+        previousHpChange,
+        nextHpChange,
+        baseHp,
+        nextCurrentHp,
+      })
 
       return {
         ...sceneState,
         diceRoll: rerolledValue,
-        currentHp: applyHpChange(baseHp, sceneState.maxHp, nextHpChange),
+        currentHp: nextCurrentHp,
       }
     })
   }
 
   const handleNextScene = () => {
-    persistCurrentSceneState()
-    persistSceneState((sceneState) => ({
-      ...sceneState,
-      judgeResult: null,
-      diceRoll: null,
-    }))
+    console.log('[StoryPage] handleNextScene start', {
+      currentSceneNumber,
+      latestSceneState: getSceneState(currentSceneNumber),
+    })
+    // 次へ進む前に、現行シーンを最新 state で確定する。
+    // page 側の古い値で上書きして、判定結果や出目を壊した事故の再発防止。
+    finalizeSceneSnapshot(currentSceneNumber, generatedScene)
     const nextSceneNumber = currentSceneNumber + 1
 
     if (currentSceneNumber === 5) {
@@ -817,29 +905,25 @@ export function StoryPage() {
       return
     }
 
-    const nextSceneState = getSceneState(nextSceneNumber)
-
-    if (
-      nextSceneState.scene === null &&
-      nextSceneState.items.length === 0 &&
-      nextSceneState.activeItemIds.length === 0 &&
-      nextSceneState.playerAction === '' &&
-      nextSceneState.judgeResult === null &&
-      nextSceneState.diceRoll === null
-    ) {
-      setSceneState({
-        ...createEmptyStorySceneState(nextSceneNumber),
-        maxHp: maxHp,
-        currentHp: currentHp,
-        items: sceneItems,
-      })
-    }
+    initializeNextSceneFromCurrent(currentSceneNumber)
+    console.log('[StoryPage] handleNextScene afterPersist', {
+      currentSceneNumber,
+      nextSceneNumber,
+      latestSceneState: getSceneState(currentSceneNumber),
+      nextSceneState: getSceneState(nextSceneNumber),
+    })
 
     setSearchParams({ scene: String(nextSceneNumber) })
   }
 
   const handlePreviousScene = () => {
-    persistCurrentSceneState()
+    console.log('[StoryPage] handlePreviousScene start', {
+      currentSceneNumber,
+      latestSceneState: getSceneState(currentSceneNumber),
+    })
+    // 戻る場合も同じく、離れるシーンを最新 state で確定する。
+    // 再訪時にスナップショットが壊れないようにするため。
+    finalizeSceneSnapshot(currentSceneNumber, generatedScene)
 
     if (currentSceneNumber === 1) {
       navigate('/background')
