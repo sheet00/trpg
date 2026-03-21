@@ -20,6 +20,7 @@ type GameState = {
   backgroundSelection: string[]
   stories: StoryScene[]
   sceneStates: StorySceneState[]
+  endingStartSceneNumber: number | null
 }
 
 type GameActions = {
@@ -29,6 +30,7 @@ type GameActions = {
   setBackgroundData: (backgroundData: BackgroundData | null) => void
   setBackgroundSelection: (backgroundSelection: string[]) => void
   setStories: (stories: StoryScene[]) => void
+  setEndingStartSceneNumber: (sceneNumber: number | null) => void
   getSceneState: (sceneNumber: number) => StorySceneState
   setSceneState: (sceneState: StorySceneState) => void
   updateSceneState: (
@@ -57,6 +59,7 @@ const defaultGameState: GameState = {
   backgroundSelection: [],
   stories: [],
   sceneStates: [],
+  endingStartSceneNumber: null,
 }
 
 function upsertSceneState(
@@ -104,6 +107,9 @@ export const useGameStore = create<GameState & GameActions>()(
       },
       setStories: (stories) => {
         set({ stories })
+      },
+      setEndingStartSceneNumber: (endingStartSceneNumber) => {
+        set({ endingStartSceneNumber })
       },
       getSceneState: (sceneNumber) => {
         return getSceneStateFromList(get().sceneStates, sceneNumber)
@@ -243,6 +249,7 @@ export const useGameStore = create<GameState & GameActions>()(
         backgroundSelection: state.backgroundSelection,
         stories: state.stories,
         sceneStates: state.sceneStates,
+        endingStartSceneNumber: state.endingStartSceneNumber,
       }),
     },
   ),

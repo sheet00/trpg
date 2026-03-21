@@ -120,6 +120,7 @@ export function StoryPage() {
   const resetGame = useGameStore((state) => state.resetGame)
   const getSceneState = useGameStore((state) => state.getSceneState)
   const setStories = useGameStore((state) => state.setStories)
+  const setEndingStartSceneNumber = useGameStore((state) => state.setEndingStartSceneNumber)
   const setSceneState = useGameStore((state) => state.setSceneState)
   const updateSceneState = useGameStore((state) => state.updateSceneState)
   const clearSceneStatesAfter = useGameStore((state) => state.clearSceneStatesAfter)
@@ -805,6 +806,9 @@ export function StoryPage() {
       return
     }
 
+    const resolvedHpChange = getHpChangeFromResolvedRoll(judgeResult, abilityScores, rollingValue)
+    const resolvedCurrentHp = applyHpChange(currentHp, maxHp, resolvedHpChange)
+
     console.log('[StoryPage] handleRollDice start', {
       sceneNumber: currentSceneNumber,
       rollingValue,
@@ -842,6 +846,12 @@ export function StoryPage() {
         currentHp: nextCurrentHp,
       }
     })
+
+    if (judgeResult && resolvedCurrentHp <= 0) {
+      finalizeSceneSnapshot(currentSceneNumber, generatedScene)
+      setEndingStartSceneNumber(currentSceneNumber)
+      navigate('/ending')
+    }
   }
 
   const handleRerollDice = () => {
@@ -850,6 +860,11 @@ export function StoryPage() {
     }
 
     const rerolledValue = Math.floor(Math.random() * 20) + 1
+    const previousHpChange = getHpChangeFromResolvedRoll(judgeResult, abilityScores, diceRoll)
+    const baseHp = applyHpChange(currentHp, maxHp, -previousHpChange)
+    const nextHpChange = getHpChangeFromResolvedRoll(judgeResult, abilityScores, rerolledValue)
+    const resolvedCurrentHp = applyHpChange(baseHp, maxHp, nextHpChange)
+
     console.log('[StoryPage] handleRerollDice start', {
       sceneNumber: currentSceneNumber,
       previousDiceRoll: diceRoll,
@@ -888,6 +903,12 @@ export function StoryPage() {
         currentHp: nextCurrentHp,
       }
     })
+
+    if (judgeResult && resolvedCurrentHp <= 0) {
+      finalizeSceneSnapshot(currentSceneNumber, generatedScene)
+      setEndingStartSceneNumber(currentSceneNumber)
+      navigate('/ending')
+    }
   }
 
   const handleNextScene = () => {
@@ -901,6 +922,7 @@ export function StoryPage() {
     const nextSceneNumber = currentSceneNumber + 1
 
     if (currentSceneNumber === 5) {
+      setEndingStartSceneNumber(currentSceneNumber)
       navigate('/ending')
       return
     }
