@@ -85,6 +85,9 @@ function getSceneResolution(sceneState: StorySceneState, abilityScores: Record<s
     failure_result: sceneState.judgeResult.failure_result,
     hp_change_on_success: sceneState.judgeResult.hp_change_on_success,
     hp_change_on_failure: sceneState.judgeResult.hp_change_on_failure,
+    resolved_outcome: sceneState.resolvedOutcome,
+    resolved_result_text: sceneState.resolvedResultText,
+    resolved_hp_change: sceneState.resolvedHpChange,
   }
 }
 
@@ -107,6 +110,50 @@ function getHpChangeFromResolvedRoll(
 
 function applyHpChange(baseHp: number, maxHp: number, hpChange: number) {
   return Math.max(0, Math.min(maxHp, baseHp + hpChange))
+}
+
+function getResolvedOutcomeData(
+  judgeResult: JudgeResult | null,
+  abilityScores: Record<string, number>,
+  diceRoll: number | null,
+) {
+  if (!judgeResult) {
+    return {
+      outcome: null,
+      resultText: '',
+      hpChange: 0,
+    }
+  }
+
+  if (!judgeResult.needs_roll) {
+    return {
+      outcome: '判定不要' as const,
+      resultText: judgeResult.success_result,
+      hpChange: judgeResult.hp_change_on_success,
+    }
+  }
+
+  if (diceRoll === null || judgeResult.difficulty === null) {
+    return {
+      outcome: null,
+      resultText: '',
+      hpChange: 0,
+    }
+  }
+
+  const modifier = getAbilityModifier(abilityScores, judgeResult.ability)
+  const total = diceRoll + modifier
+  const isSuccess = total >= judgeResult.difficulty
+
+  return {
+    outcome: isSuccess ? ('成功' as const) : ('失敗' as const),
+    resultText: isSuccess
+      ? judgeResult.success_result
+      : (judgeResult.failure_result ?? ''),
+    hpChange: isSuccess
+      ? judgeResult.hp_change_on_success
+      : judgeResult.hp_change_on_failure,
+  }
 }
 
 export function StoryPage() {
@@ -789,6 +836,9 @@ export function StoryPage() {
         items: sceneItems,
         judgeResult: parsed,
         diceRoll: null,
+        resolvedOutcome: null,
+        resolvedResultText: '',
+        resolvedHpChange: 0,
         playerAction: trimmedAction,
         activeItemIds: availableActiveItemIds,
       }))
@@ -829,6 +879,11 @@ export function StoryPage() {
         rollingValue,
       )
       const nextCurrentHp = applyHpChange(baseHp, sceneState.maxHp, nextHpChange)
+      const resolvedOutcomeData = getResolvedOutcomeData(
+        sceneState.judgeResult,
+        abilityScores,
+        rollingValue,
+      )
 
       console.log('[StoryPage] handleRollDice resolved', {
         sceneNumber: currentSceneNumber,
@@ -844,6 +899,9 @@ export function StoryPage() {
         ...sceneState,
         diceRoll: rollingValue,
         currentHp: nextCurrentHp,
+        resolvedOutcome: resolvedOutcomeData.outcome,
+        resolvedResultText: resolvedOutcomeData.resultText,
+        resolvedHpChange: resolvedOutcomeData.hpChange,
       }
     })
 
@@ -886,6 +944,11 @@ export function StoryPage() {
         rerolledValue,
       )
       const nextCurrentHp = applyHpChange(baseHp, sceneState.maxHp, nextHpChange)
+      const resolvedOutcomeData = getResolvedOutcomeData(
+        sceneState.judgeResult,
+        abilityScores,
+        rerolledValue,
+      )
 
       console.log('[StoryPage] handleRerollDice resolved', {
         sceneNumber: currentSceneNumber,
@@ -901,6 +964,9 @@ export function StoryPage() {
         ...sceneState,
         diceRoll: rerolledValue,
         currentHp: nextCurrentHp,
+        resolvedOutcome: resolvedOutcomeData.outcome,
+        resolvedResultText: resolvedOutcomeData.resultText,
+        resolvedHpChange: resolvedOutcomeData.hpChange,
       }
     })
 

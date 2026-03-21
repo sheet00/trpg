@@ -107,6 +107,9 @@ export type StorySceneState = {
   playerAction: string
   judgeResult: JudgeResult | null
   diceRoll: number | null
+  resolvedOutcome: '成功' | '失敗' | '判定不要' | null
+  resolvedResultText: string
+  resolvedHpChange: number
 }
 
 export const defaultAbilityScores: AbilityScores = {
@@ -390,6 +393,9 @@ export function createEmptyStorySceneState(sceneNumber: number): StorySceneState
     playerAction: '',
     judgeResult: null,
     diceRoll: null,
+    resolvedOutcome: null,
+    resolvedResultText: '',
+    resolvedHpChange: 0,
   }
 }
 
