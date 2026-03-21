@@ -1,8 +1,12 @@
 import { useEffect, useState, useRef } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import gmPrompt from '../assets/02_gm.md?raw'
-import continueGmPrompt from '../assets/04_gm.md?raw'
 import judgePrompt from '../assets/03_judge.md?raw'
+import scene1Prompt from '../assets/11_scene_1.md?raw'
+import scene2Prompt from '../assets/12_scene_2.md?raw'
+import scene3Prompt from '../assets/13_scene_3.md?raw'
+import scene4Prompt from '../assets/14_scene_4.md?raw'
+import scene5Prompt from '../assets/15_scene_5.md?raw'
 import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
 import {
@@ -154,6 +158,99 @@ function getResolvedOutcomeData(
       ? judgeResult.hp_change_on_success
       : judgeResult.hp_change_on_failure,
   }
+}
+
+function getSceneDirectionPrompt(sceneNumber: number) {
+  switch (sceneNumber) {
+    case 1:
+      return scene1Prompt
+    case 2:
+      return scene2Prompt
+    case 3:
+      return scene3Prompt
+    case 4:
+      return scene4Prompt
+    case 5:
+      return scene5Prompt
+    default:
+      return ''
+  }
+}
+
+function buildSceneUserPrompt(params: {
+  currentSceneNumber: number
+  backgroundData: { intro_title: string; intro_text: string }
+  selectedJobName: string
+  abilityRows: readonly (readonly [string, number])[]
+  maxHp: number
+  currentHp: number
+  sceneItems: SelectedItem[]
+  storyScenes: Array<{
+    sceneNumber: number
+    scene: StoryScene | null
+    status: {
+      maxHp: number
+      currentHp: number
+    }
+    items: SelectedItem[]
+    playerAction: string
+    activeItemIds: string[]
+    resolution: ReturnType<typeof getSceneResolution>
+  }>
+}) {
+  const {
+    currentSceneNumber,
+    backgroundData,
+    selectedJobName,
+    abilityRows,
+    maxHp,
+    currentHp,
+    sceneItems,
+    storyScenes,
+  } = params
+  const previousScene = storyScenes.at(-1) ?? null
+  const sceneDirectionPrompt = getSceneDirectionPrompt(currentSceneNumber)
+
+  return [
+    '# current_scene_number',
+    JSON.stringify(currentSceneNumber, null, 2),
+    '',
+    '# background',
+    JSON.stringify(
+      {
+        title: backgroundData.intro_title,
+        text: backgroundData.intro_text,
+      },
+      null,
+      2,
+    ),
+    '',
+    '# character',
+    JSON.stringify(
+      {
+        class: selectedJobName,
+        abilityScores: Object.fromEntries(abilityRows),
+        status: {
+          maxHp,
+          currentHp,
+        },
+      },
+      null,
+      2,
+    ),
+    '',
+    '# items',
+    JSON.stringify(sceneItems, null, 2),
+    '',
+    '# story_history',
+    JSON.stringify(storyScenes, null, 2),
+    '',
+    '# previous_scene',
+    JSON.stringify(previousScene, null, 2),
+    '',
+    '# scene_direction',
+    sceneDirectionPrompt,
+  ].join('\n')
 }
 
 export function StoryPage() {
@@ -362,59 +459,22 @@ export function StoryPage() {
           activeItemIds: sceneState.activeItemIds,
           resolution: getSceneResolution(sceneState, abilityScores),
         }))
-      const previousScene = storyScenes.at(-1) ?? null
-      const systemPrompt = currentSceneNumber === 1 ? gmPrompt : continueGmPrompt
-
-      const userPrompt = [
-        '# current_scene_number',
-        JSON.stringify(currentSceneNumber, null, 2),
-        '',
-        '# background',
-        JSON.stringify(
-          {
-            title: backgroundData.intro_title,
-            text: backgroundData.intro_text,
-          },
-          null,
-          2,
-        ),
-        '',
-        '# character',
-        JSON.stringify(
-          {
-            class: selectedJob.name,
-            abilityScores: Object.fromEntries(abilityRows),
-            status: {
-              maxHp,
-              currentHp,
-            },
-          },
-          null,
-          2,
-        ),
-        '',
-        '# items',
-        JSON.stringify(sceneItems, null, 2),
-        '',
-        '# story_history',
-        JSON.stringify(storyScenes, null, 2),
-      ].join('\n')
-
-      const continuePrompt =
-        currentSceneNumber === 1
-          ? userPrompt
-          : [
-              userPrompt,
-              '',
-              '# previous_scene',
-              JSON.stringify(previousScene, null, 2),
-            ].join('\n')
+      const userPrompt = buildSceneUserPrompt({
+        currentSceneNumber,
+        backgroundData,
+        selectedJobName: selectedJob.name,
+        abilityRows,
+        maxHp,
+        currentHp,
+        sceneItems,
+        storyScenes,
+      })
 
       try {
         const parsed = await postChatCompletion<{ scene_title: string; scene_text: string; items: SelectedItem[] }>({
           messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: continuePrompt },
+            { role: 'system', content: gmPrompt },
+            { role: 'user', content: userPrompt },
           ],
           tools: [
             {
@@ -586,59 +646,22 @@ export function StoryPage() {
         activeItemIds: sceneState.activeItemIds,
         resolution: getSceneResolution(sceneState, abilityScores),
       }))
-    const previousScene = storyScenes.at(-1) ?? null
-    const systemPrompt = currentSceneNumber === 1 ? gmPrompt : continueGmPrompt
-
-    const userPrompt = [
-      '# current_scene_number',
-      JSON.stringify(currentSceneNumber, null, 2),
-      '',
-      '# background',
-      JSON.stringify(
-        {
-          title: backgroundData.intro_title,
-          text: backgroundData.intro_text,
-        },
-        null,
-        2,
-      ),
-      '',
-      '# character',
-      JSON.stringify(
-        {
-          class: selectedJob.name,
-          abilityScores: Object.fromEntries(abilityRows),
-          status: {
-            maxHp,
-            currentHp,
-          },
-        },
-        null,
-        2,
-      ),
-      '',
-      '# items',
-      JSON.stringify(sceneItems, null, 2),
-      '',
-      '# story_history',
-      JSON.stringify(storyScenes, null, 2),
-    ].join('\n')
-
-    const continuePrompt =
-      currentSceneNumber === 1
-        ? userPrompt
-        : [
-          userPrompt,
-          '',
-          '# previous_scene',
-          JSON.stringify(previousScene, null, 2),
-        ].join('\n')
+    const userPrompt = buildSceneUserPrompt({
+      currentSceneNumber,
+      backgroundData,
+      selectedJobName: selectedJob.name,
+      abilityRows,
+      maxHp,
+      currentHp,
+      sceneItems,
+      storyScenes,
+    })
 
     try {
       const parsed = await postChatCompletion<{ scene_title: string; scene_text: string; items: SelectedItem[] }>({
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: continuePrompt },
+          { role: 'system', content: gmPrompt },
+          { role: 'user', content: userPrompt },
         ],
         tools: [
           {
