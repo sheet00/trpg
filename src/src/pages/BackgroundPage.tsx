@@ -189,11 +189,6 @@ export function BackgroundPage() {
     navigate('/story')
   }
 
-  const handleRestart = () => {
-    clearAllStoredGameData()
-    navigate('/', { replace: true })
-  }
-
   useEffect(() => {
     document.title = '背景設定 | TRPG'
   }, [])
