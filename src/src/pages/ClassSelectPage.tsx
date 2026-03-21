@@ -2,32 +2,31 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
-import {
-  clearAllStoredGameData,
-  getStoredClassId,
-  setStoredClassId,
-} from '../lib/character-storage'
+import { useGameStore } from '../store/game-store'
 
 export function ClassSelectPage() {
   const navigate = useNavigate()
+  const storedSelectedClassId = useGameStore((state) => state.selectedClassId)
+  const resetGame = useGameStore((state) => state.resetGame)
+  const setSelectedClassId = useGameStore((state) => state.setSelectedClassId)
   const [selectedClass, setSelectedClass] = useState(
-    () => getStoredClassId() ?? characterClasses[0].id,
+    () => storedSelectedClassId ?? characterClasses[0].id,
   )
   const selectedJob =
     characterClasses.find((job) => job.id === selectedClass) ?? characterClasses[0]
 
   const handleSelectClass = (classId: string) => {
     setSelectedClass(classId)
-    setStoredClassId(classId)
+    setSelectedClassId(classId)
   }
 
   const handleNext = () => {
-    setStoredClassId(selectedClass)
+    setSelectedClassId(selectedClass)
     navigate('/ability-scores')
   }
 
   const handleRestart = () => {
-    clearAllStoredGameData()
+    resetGame()
     navigate('/', { replace: true })
   }
 

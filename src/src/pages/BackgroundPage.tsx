@@ -4,19 +4,10 @@ import startPrompt from '../assets/01_start.md?raw'
 import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
 import {
-  clearAllStoredGameData,
-  createEmptyStorySceneState,
-  getStoredAbilityScores,
-  getStoredBackgroundData,
-  getStoredBackgroundSelection,
-  getStoredClassId,
-  setStoredBackgroundData,
-  setStoredBackgroundSelection,
-  setStoredStorySceneState,
   type SelectedItem,
-  setStoredSelectedItems,
 } from '../lib/character-storage'
 import { postChatCompletion } from '../lib/api-client'
+import { useGameStore } from '../store/game-store'
 import { formatTextWithLineBreaks } from '../lib/text-utils'
 
 type GeneratedItem = SelectedItem
@@ -33,24 +24,17 @@ function getAbilityModifier(score: number) {
   return Math.floor((score - 10) / 2)
 }
 
-function formatAbilityScores() {
-  const scores = getStoredAbilityScores()
-
-  return [
-    `筋力 ${scores.strength}`,
-    `敏捷 ${scores.dexterity}`,
-    `耐久 ${scores.constitution}`,
-    `知力 ${scores.intelligence}`,
-    `判断力 ${scores.wisdom}`,
-    `魅力 ${scores.charisma}`,
-  ].join(' / ')
-}
-
 export function BackgroundPage() {
   const navigate = useNavigate()
-  const selectedClassId = getStoredClassId()
+  const selectedClassId = useGameStore((state) => state.selectedClassId)
+  const abilityScores = useGameStore((state) => state.abilityScores)
+  const storedBackgroundData = useGameStore((state) => state.backgroundData)
+  const selectedItemIds = useGameStore((state) => state.backgroundSelection)
+  const resetGame = useGameStore((state) => state.resetGame)
+  const setBackgroundData = useGameStore((state) => state.setBackgroundData)
+  const setBackgroundSelection = useGameStore((state) => state.setBackgroundSelection)
+  const initializeSceneZero = useGameStore((state) => state.initializeSceneZero)
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
-  const storedBackgroundData = getStoredBackgroundData()
   const [generatedBackground, setGeneratedBackground] = useState<GeneratedBackground | null>(
     () =>
       storedBackgroundData?.item_candidates
@@ -61,9 +45,6 @@ export function BackgroundPage() {
           }
         : null,
   )
-  const [selectedItemIds, setSelectedItemIds] = useState<string[]>(() =>
-    getStoredBackgroundSelection(),
-  )
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [hasAttemptedAutoGenerate, setHasAttemptedAutoGenerate] = useState(() =>
@@ -72,7 +53,7 @@ export function BackgroundPage() {
   const isGeneratingRef = useRef(false)
 
   const handleRestart = () => {
-    clearAllStoredGameData()
+    resetGame()
     navigate('/', { replace: true })
   }
 
@@ -89,7 +70,14 @@ export function BackgroundPage() {
     const userPrompt = [
       '確定済みキャラクター情報を渡します。',
       `クラス: ${selectedJob.name}`,
-      `能力値: ${formatAbilityScores()}`,
+      `能力値: ${[
+        `筋力 ${abilityScores.strength}`,
+        `敏捷 ${abilityScores.dexterity}`,
+        `耐久 ${abilityScores.constitution}`,
+        `知力 ${abilityScores.intelligence}`,
+        `判断力 ${abilityScores.wisdom}`,
+        `魅力 ${abilityScores.charisma}`,
+      ].join(' / ')}`,
       'これはゲーム全体の最初のイントロです。',
       'プレイヤーはいま最初のアイテム選択を行う直前にいます。',
       'ストーリーが始まるのは次のシーンです。',
@@ -137,13 +125,12 @@ export function BackgroundPage() {
       })
 
       setGeneratedBackground(parsed)
-      setStoredBackgroundData({
+      setBackgroundData({
         intro_title: parsed.intro_title,
         intro_text: parsed.intro_text,
         item_candidates: parsed.item_candidates,
       })
-      setSelectedItemIds([])
-      setStoredBackgroundSelection([])
+      setBackgroundSelection([])
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : '生成中に不明なエラーが発生しました。',
@@ -155,16 +142,13 @@ export function BackgroundPage() {
   }
 
   const handleToggleItem = (itemId: string) => {
-    setSelectedItemIds((current) => {
-      const nextItemIds = current.includes(itemId)
-        ? current.filter((currentItemId) => currentItemId !== itemId)
-        : current.length >= MAX_SELECTED_ITEMS
-          ? current
-          : [...current, itemId]
+    const nextItemIds = selectedItemIds.includes(itemId)
+      ? selectedItemIds.filter((currentItemId) => currentItemId !== itemId)
+      : selectedItemIds.length >= MAX_SELECTED_ITEMS
+        ? selectedItemIds
+        : [...selectedItemIds, itemId]
 
-      setStoredBackgroundSelection(nextItemIds)
-      return nextItemIds
-    })
+    setBackgroundSelection(nextItemIds)
   }
 
   const handleStartStory = () => {
@@ -172,16 +156,12 @@ export function BackgroundPage() {
       return
     }
 
-    const abilityScores = getStoredAbilityScores()
     const initialHp = Math.max(1, selectedJob.baseHp + getAbilityModifier(abilityScores.constitution))
     const selectedItems = generatedBackground.item_candidates.filter((item) =>
       selectedItemIds.includes(item.id),
     )
 
-    setStoredSelectedItems(selectedItems)
-    setStoredStorySceneState({
-      ...createEmptyStorySceneState(0),
-      sceneNumber: 0,
+    initializeSceneZero({
       maxHp: initialHp,
       currentHp: initialHp,
       items: selectedItems,
@@ -208,7 +188,14 @@ export function BackgroundPage() {
       const userPrompt = [
         '確定済みキャラクター情報を渡します。',
         `クラス: ${selectedJob.name}`,
-        `能力値: ${formatAbilityScores()}`,
+        `能力値: ${[
+          `筋力 ${abilityScores.strength}`,
+          `敏捷 ${abilityScores.dexterity}`,
+          `耐久 ${abilityScores.constitution}`,
+          `知力 ${abilityScores.intelligence}`,
+          `判断力 ${abilityScores.wisdom}`,
+          `魅力 ${abilityScores.charisma}`,
+        ].join(' / ')}`,
         'これはゲーム全体の最初のイントロです。',
         'プレイヤーはいま最初のアイテム選択を行う直前にいます。',
         'ストーリーが始まるのは次のシーンです。',
@@ -256,13 +243,12 @@ export function BackgroundPage() {
         })
 
         setGeneratedBackground(parsed)
-        setStoredBackgroundData({
+        setBackgroundData({
           intro_title: parsed.intro_title,
           intro_text: parsed.intro_text,
           item_candidates: parsed.item_candidates,
         })
-        setSelectedItemIds([])
-        setStoredBackgroundSelection([])
+        setBackgroundSelection([])
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : '生成中に不明なエラーが発生しました。',
@@ -272,7 +258,20 @@ export function BackgroundPage() {
         isGeneratingRef.current = false
       }
     })()
-  }, [generatedBackground, hasAttemptedAutoGenerate, isLoading, selectedJob, storedBackgroundData])
+  }, [
+    abilityScores.charisma,
+    abilityScores.constitution,
+    abilityScores.dexterity,
+    abilityScores.intelligence,
+    abilityScores.strength,
+    abilityScores.wisdom,
+    generatedBackground,
+    hasAttemptedAutoGenerate,
+    isLoading,
+    selectedJob?.id,
+    storedBackgroundData?.intro_text,
+    storedBackgroundData?.intro_title,
+  ])
 
   if (!selectedJob) {
     return <Navigate to="/class-select" replace />
@@ -296,7 +295,16 @@ export function BackgroundPage() {
         <section className="card border border-base-300 bg-base-200/70">
           <div className="card-body gap-2 p-5 text-base text-base-content">
           <p>クラス: {selectedJob.name}</p>
-          <p>能力値: {formatAbilityScores()}</p>
+          <p>
+            能力値: {[
+              `筋力 ${abilityScores.strength}`,
+              `敏捷 ${abilityScores.dexterity}`,
+              `耐久 ${abilityScores.constitution}`,
+              `知力 ${abilityScores.intelligence}`,
+              `判断力 ${abilityScores.wisdom}`,
+              `魅力 ${abilityScores.charisma}`,
+            ].join(' / ')}
+          </p>
           </div>
         </section>
 

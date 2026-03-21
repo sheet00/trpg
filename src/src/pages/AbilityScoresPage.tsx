@@ -2,14 +2,8 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
-import {
-  clearAllStoredGameData,
-  defaultAbilityScores,
-  getStoredAbilityScores,
-  getStoredClassId,
-  setStoredAbilityScores,
-  type AbilityScores,
-} from '../lib/character-storage'
+import { defaultAbilityScores, type AbilityScores } from '../lib/character-storage'
+import { useGameStore } from '../store/game-store'
 
 const scoreCosts: Record<number, number> = {
   8: 0,
@@ -83,13 +77,16 @@ function getModifier(score: number) {
 
 export function AbilityScoresPage() {
   const navigate = useNavigate()
-  const selectedClassId = getStoredClassId()
+  const selectedClassId = useGameStore((state) => state.selectedClassId)
+  const storedScores = useGameStore((state) => state.abilityScores)
+  const resetGame = useGameStore((state) => state.resetGame)
+  const setAbilityScores = useGameStore((state) => state.setAbilityScores)
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
-  const [scores, setScores] = useState(() => getStoredAbilityScores())
+  const [scores, setScores] = useState(() => storedScores)
 
   useEffect(() => {
-    setStoredAbilityScores(scores)
-  }, [scores])
+    setAbilityScores(scores)
+  }, [scores, setAbilityScores])
 
   const totalPoints = getTotalCost(scores)
   const remainingPoints = 27 - totalPoints
@@ -112,7 +109,7 @@ export function AbilityScoresPage() {
   }
 
   const handleRestart = () => {
-    clearAllStoredGameData()
+    resetGame()
     navigate('/', { replace: true })
   }
 

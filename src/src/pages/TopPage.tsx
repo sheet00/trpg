@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { clearAllStoredGameData } from '../lib/character-storage'
+import { useGameStore } from '../store/game-store'
 
 export function TopPage() {
   const navigate = useNavigate()
+  const resetGame = useGameStore((state) => state.resetGame)
 
   const handleStart = () => {
-    clearAllStoredGameData()
+    resetGame()
     navigate('/class-select')
   }
 
