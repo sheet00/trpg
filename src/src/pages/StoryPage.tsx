@@ -743,6 +743,11 @@ export function StoryPage() {
     }))
     const nextSceneNumber = currentSceneNumber + 1
 
+    if (currentSceneNumber === 5) {
+      navigate('/ending')
+      return
+    }
+
     const nextSceneState = getSceneState(nextSceneNumber)
 
     if (
@@ -1069,7 +1074,7 @@ export function StoryPage() {
                           className="btn btn-secondary"
                           onClick={handleNextScene}
                         >
-                          {nextButtonLabel}
+                          次へ
                         </button>
                       </div>
                     ) : null}

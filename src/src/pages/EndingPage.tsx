@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import endingPrompt from '../assets/05_ending.md?raw'
 import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
@@ -71,7 +71,6 @@ function getSceneResolution(
 
 export function EndingPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const selectedClassId = useGameStore((state) => state.selectedClassId)
   const abilityScores = useGameStore((state) => state.abilityScores)
   const backgroundData = useGameStore((state) => state.backgroundData)
@@ -82,9 +81,7 @@ export function EndingPage() {
   const setSceneState = useGameStore((state) => state.setSceneState)
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
   const abilityRows = getAbilityRows(abilityScores)
-  const sceneFromSearchParams = Number(searchParams.get('scene') ?? '6')
-  const endingSceneNumber =
-    Number.isInteger(sceneFromSearchParams) && sceneFromSearchParams > 0 ? sceneFromSearchParams : 6
+  const endingSceneNumber = 6
   const previousSceneNumber = endingSceneNumber - 1
   const previousSceneState = getSceneState(previousSceneNumber)
   const [generatedEnding, setGeneratedEnding] = useState<StoryScene | null>(() => {
