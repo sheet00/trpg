@@ -50,8 +50,6 @@ export type BackgroundData = {
 export type StoryScene = {
   scene_title: string
   scene_text: string
-  is_ending: boolean
-  next_is_ending: boolean
 }
 
 function isSelectedItem(value: unknown): value is SelectedItem {
@@ -84,11 +82,6 @@ function normalizeStoryScene(value: unknown): StoryScene | null {
   return {
     scene_title: value.scene_title,
     scene_text: value.scene_text,
-    is_ending: 'is_ending' in value && typeof value.is_ending === 'boolean' ? value.is_ending : false,
-    next_is_ending:
-      'next_is_ending' in value && typeof value.next_is_ending === 'boolean'
-        ? value.next_is_ending
-        : false,
   }
 }
 

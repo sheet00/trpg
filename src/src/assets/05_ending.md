@@ -62,16 +62,12 @@
 {
   "scene_title": "エンディングタイトル",
   "scene_text": "最終決戦の結果と余韻を含む本文",
-  "is_ending": true,
-  "next_is_ending": false,
   "items": []
 }
 ```
 
 - `scene_title` は終幕にふさわしい短いタイトル文字列にする。
 - `scene_text` は決着の内容と短い余韻が分かる本文にする。
-- `is_ending` は必ず `true` にする。
-- `next_is_ending` は必ず `false` にする。
 - `items` は必要なら反映してよいが、エンディングでは物語の締めくくりを優先する。
 
 ## 禁止事項

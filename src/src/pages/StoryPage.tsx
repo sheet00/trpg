@@ -295,7 +295,7 @@ export function StoryPage() {
             ].join('\n')
 
       try {
-        const parsed = await postChatCompletion<StoryScene & { items: SelectedItem[] }>({
+        const parsed = await postChatCompletion<{ scene_title: string; scene_text: string; items: SelectedItem[] }>({
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: continuePrompt },
@@ -311,8 +311,6 @@ export function StoryPage() {
                   properties: {
                     scene_title: { type: 'string' },
                     scene_text: { type: 'string' },
-                    is_ending: { type: 'boolean' },
-                    next_is_ending: { type: 'boolean' },
                     items: {
                       type: 'array',
                       items: {
@@ -327,7 +325,7 @@ export function StoryPage() {
                       },
                     },
                   },
-                  required: ['scene_title', 'scene_text', 'is_ending', 'next_is_ending', 'items'],
+                  required: ['scene_title', 'scene_text', 'items'],
                 },
               },
             },
@@ -349,8 +347,6 @@ export function StoryPage() {
         const nextScene = {
           scene_title: parsed.scene_title,
           scene_text: parsed.scene_text,
-          is_ending: parsed.is_ending,
-          next_is_ending: parsed.next_is_ending,
         }
         const nextStories = sceneStates
           .filter((sceneState) => sceneState.sceneNumber <= currentSceneNumber)
@@ -521,7 +517,7 @@ export function StoryPage() {
         ].join('\n')
 
     try {
-      const parsed = await postChatCompletion<StoryScene & { items: SelectedItem[] }>({
+      const parsed = await postChatCompletion<{ scene_title: string; scene_text: string; items: SelectedItem[] }>({
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: continuePrompt },
@@ -537,8 +533,6 @@ export function StoryPage() {
                 properties: {
                   scene_title: { type: 'string' },
                   scene_text: { type: 'string' },
-                  is_ending: { type: 'boolean' },
-                  next_is_ending: { type: 'boolean' },
                   items: {
                     type: 'array',
                     items: {
@@ -553,7 +547,7 @@ export function StoryPage() {
                     },
                   },
                 },
-                required: ['scene_title', 'scene_text', 'is_ending', 'next_is_ending', 'items'],
+                required: ['scene_title', 'scene_text', 'items'],
               },
             },
           },
@@ -568,8 +562,6 @@ export function StoryPage() {
       const nextScene = {
         scene_title: parsed.scene_title,
         scene_text: parsed.scene_text,
-        is_ending: parsed.is_ending,
-        next_is_ending: parsed.next_is_ending,
       }
       const nextStories = sceneStates
         .filter((sceneState) => sceneState.sceneNumber <= currentSceneNumber)
@@ -751,11 +743,6 @@ export function StoryPage() {
     }))
     const nextSceneNumber = currentSceneNumber + 1
 
-    if (generatedScene?.next_is_ending) {
-      navigate(`/ending?scene=${nextSceneNumber}`)
-      return
-    }
-
     const nextSceneState = getSceneState(nextSceneNumber)
 
     if (
@@ -798,11 +785,7 @@ export function StoryPage() {
   const totalRoll = displayRoll !== null ? displayRoll + modifier : null
   const isPlayerActionEmpty = playerAction.trim().length === 0
   const isConfirmActionDisabled = isJudgeLoading || isPlayerActionEmpty || !generatedScene
-  const canAdvanceScene =
-    generatedScene?.is_ending !== true &&
-    judgeResult !== null &&
-    (!judgeResult.needs_roll || diceRoll !== null)
-  const nextButtonLabel = generatedScene?.next_is_ending ? 'エンディングへ' : '次へ'
+  const canAdvanceScene = judgeResult !== null && (!judgeResult.needs_roll || diceRoll !== null)
   const difficulty = judgeResult?.difficulty ?? null
   const isSuccess =
     totalRoll !== null && difficulty !== null
@@ -819,7 +802,7 @@ export function StoryPage() {
           variant: 'outline',
         }}
         nextAction={{
-          label: nextButtonLabel,
+          label: '次へ',
           onClick: handleNextScene,
           disabled: !canAdvanceScene,
           variant: 'primary',
@@ -924,11 +907,6 @@ export function StoryPage() {
                       <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-base-content">
                         {formatTextWithLineBreaks(generatedScene.scene_text)}
                       </p>
-                      {generatedScene.is_ending ? (
-                        <p className="mt-4 text-sm text-base-content/70">
-                          このシーンで物語は決着しています。戻る から過去のシーンを見直せます。
-                        </p>
-                      ) : null}
                     </div>
                   ) : (
                     <p className="text-base text-base-content">
