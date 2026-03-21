@@ -41,7 +41,30 @@ export type SelectedItem = {
   category: string
 }
 
+export type AdventureThemeId =
+  | 'comical'
+  | 'serious'
+  | 'dark'
+  | 'mysterious'
+  | 'heroic'
+  | 'grim'
+  | 'epic'
+  | 'melancholic'
+  | 'whimsical'
+  | 'suspenseful'
+  | 'gothic'
+  | 'folktale'
+  | 'political'
+  | 'survival'
+  | 'romantic'
+  | 'tragic'
+  | 'weird'
+  | 'adventurous'
+  | 'revenge'
+  | 'sacred'
+
 export type BackgroundData = {
+  adventureTheme: AdventureThemeId
   intro_title: string
   intro_text: string
   item_candidates?: SelectedItem[]
@@ -194,6 +217,7 @@ export function getStoredBackgroundData() {
     if (
       typeof parsed === 'object' &&
       parsed !== null &&
+      typeof parsed.adventureTheme === 'string' &&
       typeof parsed.intro_title === 'string' &&
       typeof parsed.intro_text === 'string' &&
         (!('item_candidates' in parsed) ||

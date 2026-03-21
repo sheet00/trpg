@@ -126,7 +126,7 @@ export function AbilityScoresPage() {
       <PageHeader
         title="能力値"
         backAction={{ label: '戻る', href: '/class-select', variant: 'outline' }}
-        nextAction={{ label: '次へ', href: '/background', variant: 'primary' }}
+        nextAction={{ label: '次へ', href: '/adventure-theme', variant: 'primary' }}
         restartAction={{ label: '最初から', onClick: handleRestart, variant: 'error' }}
       />
       <section className="page-panel w-full max-w-[980px] p-7">

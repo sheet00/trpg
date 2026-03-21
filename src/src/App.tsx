@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { AdventureThemePage } from './pages/AdventureThemePage'
 import { AbilityScoresPage } from './pages/AbilityScoresPage'
 import { BackgroundPage } from './pages/BackgroundPage'
 import { ClassSelectPage } from './pages/ClassSelectPage'
@@ -12,6 +13,7 @@ function App() {
       <Route path="/" element={<TopPage />} />
       <Route path="/class-select" element={<ClassSelectPage />} />
       <Route path="/ability-scores" element={<AbilityScoresPage />} />
+      <Route path="/adventure-theme" element={<AdventureThemePage />} />
       <Route path="/background" element={<BackgroundPage />} />
       <Route path="/story" element={<StoryPage />} />
       <Route path="/ending" element={<EndingPage />} />

@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import {
   createEmptyStorySceneState,
   defaultAbilityScores,
+  type AdventureThemeId,
   type AbilityScores,
   type BackgroundData,
   type JudgeResult,
@@ -16,6 +17,7 @@ const GAME_STORE_KEY = 'trpg:game-store'
 type GameState = {
   selectedClassId: string | null
   abilityScores: AbilityScores
+  adventureTheme: AdventureThemeId | null
   backgroundData: BackgroundData | null
   backgroundSelection: string[]
   stories: StoryScene[]
@@ -27,6 +29,7 @@ type GameActions = {
   resetGame: () => void
   setSelectedClassId: (selectedClassId: string) => void
   setAbilityScores: (abilityScores: AbilityScores) => void
+  setAdventureTheme: (adventureTheme: AdventureThemeId | null) => void
   setBackgroundData: (backgroundData: BackgroundData | null) => void
   setBackgroundSelection: (backgroundSelection: string[]) => void
   setStories: (stories: StoryScene[]) => void
@@ -55,6 +58,7 @@ type GameActions = {
 const defaultGameState: GameState = {
   selectedClassId: null,
   abilityScores: defaultAbilityScores,
+  adventureTheme: null,
   backgroundData: null,
   backgroundSelection: [],
   stories: [],
@@ -98,6 +102,9 @@ export const useGameStore = create<GameState & GameActions>()(
       },
       setAbilityScores: (abilityScores) => {
         set({ abilityScores })
+      },
+      setAdventureTheme: (adventureTheme) => {
+        set({ adventureTheme })
       },
       setBackgroundData: (backgroundData) => {
         set({ backgroundData })
@@ -245,6 +252,7 @@ export const useGameStore = create<GameState & GameActions>()(
       partialize: (state) => ({
         selectedClassId: state.selectedClassId,
         abilityScores: state.abilityScores,
+        adventureTheme: state.adventureTheme,
         backgroundData: state.backgroundData,
         backgroundSelection: state.backgroundSelection,
         stories: state.stories,

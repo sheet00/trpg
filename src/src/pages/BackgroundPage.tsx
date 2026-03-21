@@ -2,8 +2,10 @@ import { useEffect, useState, useRef } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import startPrompt from '../assets/01_start.md?raw'
 import { PageHeader } from '../components/PageHeader'
+import { getAdventureThemeById } from '../data/adventure-themes'
 import { characterClasses } from '../data/classes'
 import {
+  type AdventureThemeId,
   type SelectedItem,
 } from '../lib/character-storage'
 import { postChatCompletion } from '../lib/api-client'
@@ -13,6 +15,7 @@ import { formatTextWithLineBreaks } from '../lib/text-utils'
 type GeneratedItem = SelectedItem
 
 type GeneratedBackground = {
+  adventureTheme: AdventureThemeId
   intro_title: string
   intro_text: string
   item_candidates: GeneratedItem[]
@@ -28,6 +31,7 @@ export function BackgroundPage() {
   const navigate = useNavigate()
   const selectedClassId = useGameStore((state) => state.selectedClassId)
   const abilityScores = useGameStore((state) => state.abilityScores)
+  const adventureTheme = useGameStore((state) => state.adventureTheme)
   const storedBackgroundData = useGameStore((state) => state.backgroundData)
   const selectedItemIds = useGameStore((state) => state.backgroundSelection)
   const resetGame = useGameStore((state) => state.resetGame)
@@ -35,10 +39,12 @@ export function BackgroundPage() {
   const setBackgroundSelection = useGameStore((state) => state.setBackgroundSelection)
   const initializeSceneZero = useGameStore((state) => state.initializeSceneZero)
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
+  const selectedTheme = getAdventureThemeById(adventureTheme)
   const [generatedBackground, setGeneratedBackground] = useState<GeneratedBackground | null>(
     () =>
       storedBackgroundData?.item_candidates
         ? {
+            adventureTheme: storedBackgroundData.adventureTheme,
             intro_title: storedBackgroundData.intro_title,
             intro_text: storedBackgroundData.intro_text,
             item_candidates: storedBackgroundData.item_candidates,
@@ -58,7 +64,7 @@ export function BackgroundPage() {
   }
 
   const handleGenerate = async () => {
-    if (!selectedJob) {
+    if (!selectedJob || !selectedTheme) {
       return
     }
 
@@ -70,6 +76,9 @@ export function BackgroundPage() {
     const userPrompt = [
       '確定済みキャラクター情報を渡します。',
       `クラス: ${selectedJob.name}`,
+      `今回の冒険テーマ: ${selectedTheme.name}`,
+      `テーマの特徴: ${selectedTheme.summary}`,
+      `テーマの雰囲気: ${selectedTheme.vibe}`,
       `能力値: ${[
         `筋力 ${abilityScores.strength}`,
         `敏捷 ${abilityScores.dexterity}`,
@@ -82,6 +91,8 @@ export function BackgroundPage() {
       'プレイヤーはいま最初のアイテム選択を行う直前にいます。',
       'ストーリーが始まるのは次のシーンです。',
       'この情報を前提に、立場と状況の提示、およびアイテム候補を生成してください。',
+      '背景本文もアイテム候補も、今回の冒険テーマがはっきり感じられる内容にしてください。',
+      'テーマに合わない無難な導入や、どのテーマでも成立する薄い内容は避けてください。',
       'ここではストーリーを開始せず、冒険直前の準備段階で止めてください。',
     ].join('\n')
 
@@ -124,8 +135,12 @@ export function BackgroundPage() {
         tool_choice: { type: 'function', function: { name: 'generate_background' } },
       })
 
-      setGeneratedBackground(parsed)
+      setGeneratedBackground({
+        ...parsed,
+        adventureTheme: selectedTheme.id,
+      })
       setBackgroundData({
+        adventureTheme: selectedTheme.id,
         intro_title: parsed.intro_title,
         intro_text: parsed.intro_text,
         item_candidates: parsed.item_candidates,
@@ -180,7 +195,7 @@ export function BackgroundPage() {
 
     setHasAttemptedAutoGenerate(true)
     void (async () => {
-      if (!selectedJob || isGeneratingRef.current) return
+      if (!selectedJob || !selectedTheme || isGeneratingRef.current) return
       isGeneratingRef.current = true
       setIsLoading(true)
       setErrorMessage('')
@@ -188,6 +203,9 @@ export function BackgroundPage() {
       const userPrompt = [
         '確定済みキャラクター情報を渡します。',
         `クラス: ${selectedJob.name}`,
+        `今回の冒険テーマ: ${selectedTheme.name}`,
+        `テーマの特徴: ${selectedTheme.summary}`,
+        `テーマの雰囲気: ${selectedTheme.vibe}`,
         `能力値: ${[
           `筋力 ${abilityScores.strength}`,
           `敏捷 ${abilityScores.dexterity}`,
@@ -200,6 +218,8 @@ export function BackgroundPage() {
         'プレイヤーはいま最初のアイテム選択を行う直前にいます。',
         'ストーリーが始まるのは次のシーンです。',
         'この情報を前提に、立場と状況の提示、およびアイテム候補を生成してください。',
+        '背景本文もアイテム候補も、今回の冒険テーマがはっきり感じられる内容にしてください。',
+        'テーマに合わない無難な導入や、どのテーマでも成立する薄い内容は避けてください。',
         'ここではストーリーを開始せず、冒険直前の準備段階で止めてください。',
       ].join('\n')
 
@@ -242,8 +262,12 @@ export function BackgroundPage() {
           tool_choice: { type: 'function', function: { name: 'generate_background' } },
         })
 
-        setGeneratedBackground(parsed)
+        setGeneratedBackground({
+          ...parsed,
+          adventureTheme: selectedTheme.id,
+        })
         setBackgroundData({
+          adventureTheme: selectedTheme.id,
           intro_title: parsed.intro_title,
           intro_text: parsed.intro_text,
           item_candidates: parsed.item_candidates,
@@ -269,6 +293,7 @@ export function BackgroundPage() {
     hasAttemptedAutoGenerate,
     isLoading,
     selectedJob?.id,
+    selectedTheme?.id,
     storedBackgroundData?.intro_text,
     storedBackgroundData?.intro_title,
   ])
@@ -277,11 +302,15 @@ export function BackgroundPage() {
     return <Navigate to="/class-select" replace />
   }
 
+  if (!selectedTheme) {
+    return <Navigate to="/adventure-theme" replace />
+  }
+
   return (
     <main className="page-shell" data-theme="light">
       <PageHeader
         title="背景設定"
-        backAction={{ label: '戻る', href: '/ability-scores', variant: 'outline' }}
+        backAction={{ label: '戻る', href: '/adventure-theme', variant: 'outline' }}
         nextAction={{
           label: '次へ',
           onClick: handleStartStory,
@@ -294,6 +323,7 @@ export function BackgroundPage() {
         <div className="page-stack">
         <section className="card border border-base-300 bg-base-200/70">
           <div className="card-body gap-2 p-5 text-base text-base-content">
+          <p>冒険テーマ: {selectedTheme.name}</p>
           <p>クラス: {selectedJob.name}</p>
           <p>
             能力値: {[
@@ -331,6 +361,9 @@ export function BackgroundPage() {
             <div className="flex flex-col gap-6">
               <section className="card border border-base-300 bg-base-100/90">
                 <div className="card-body p-5">
+                <p className="text-sm uppercase tracking-[0.18em] text-base-content/55">
+                  {selectedTheme.name}
+                </p>
                 <h2 className="font-[var(--heading-font)] text-2xl text-neutral">
                   {generatedBackground.intro_title}
                 </h2>

@@ -190,7 +190,7 @@ function getSceneDirectionPrompt(sceneNumber: number) {
 
 function buildSceneUserPrompt(params: {
   currentSceneNumber: number
-  backgroundData: { intro_title: string; intro_text: string }
+  backgroundData: { adventureTheme: string; intro_title: string; intro_text: string }
   selectedJobName: string
   abilityRows: readonly (readonly [string, number])[]
   maxHp: number
@@ -229,12 +229,16 @@ function buildSceneUserPrompt(params: {
     '# background',
     JSON.stringify(
       {
+        adventureTheme: backgroundData.adventureTheme,
         title: backgroundData.intro_title,
         text: backgroundData.intro_text,
       },
       null,
       2,
     ),
+    '',
+    '# adventure_theme',
+    JSON.stringify(backgroundData.adventureTheme, null, 2),
     '',
     '# character',
     JSON.stringify(
@@ -415,6 +419,7 @@ export function StoryPage() {
   }, [
     backgroundData?.intro_text,
     backgroundData?.intro_title,
+    backgroundData?.adventureTheme,
     currentSceneNumber,
     selectedJob?.id,
     getSceneState,
@@ -562,6 +567,7 @@ export function StoryPage() {
   }, [
     backgroundData?.intro_text,
     backgroundData?.intro_title,
+    backgroundData?.adventureTheme,
     currentSceneNumber,
     abilityScores.charisma,
     abilityScores.constitution,
@@ -766,12 +772,16 @@ export function StoryPage() {
         '# background',
         JSON.stringify(
           {
+            adventureTheme: backgroundData.adventureTheme,
             title: backgroundData.intro_title,
             text: backgroundData.intro_text,
           },
           null,
           2,
         ),
+        '',
+        '# adventure_theme',
+        JSON.stringify(backgroundData.adventureTheme, null, 2),
         '',
         '# character',
         JSON.stringify(

@@ -156,12 +156,16 @@ export function EndingPage() {
         '# background',
         JSON.stringify(
           {
+            adventureTheme: backgroundData.adventureTheme,
             title: backgroundData.intro_title,
             text: backgroundData.intro_text,
           },
           null,
           2,
         ),
+        '',
+        '# adventure_theme',
+        JSON.stringify(backgroundData.adventureTheme, null, 2),
         '',
         '# character',
         JSON.stringify(
@@ -310,19 +314,23 @@ export function EndingPage() {
       '# current_scene_number',
       JSON.stringify(endingSceneNumber, null, 2),
       '',
-      '# background',
-      JSON.stringify(
-        {
-          title: backgroundData.intro_title,
-          text: backgroundData.intro_text,
-        },
-        null,
-        2,
-      ),
-      '',
-      '# character',
-      JSON.stringify(
-        {
+        '# background',
+        JSON.stringify(
+          {
+            adventureTheme: backgroundData.adventureTheme,
+            title: backgroundData.intro_title,
+            text: backgroundData.intro_text,
+          },
+          null,
+          2,
+        ),
+        '',
+        '# adventure_theme',
+        JSON.stringify(backgroundData.adventureTheme, null, 2),
+        '',
+        '# character',
+        JSON.stringify(
+          {
           class: selectedJob.name,
           abilityScores: Object.fromEntries(abilityRows),
         },
