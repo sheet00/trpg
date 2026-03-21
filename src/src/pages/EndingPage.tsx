@@ -12,6 +12,8 @@ import { postChatCompletion } from '../lib/api-client'
 import { useGameStore } from '../store/game-store'
 import { formatTextWithLineBreaks } from '../lib/text-utils'
 
+const PARTIAL_SUCCESS_MARGIN = 2
+
 function getAbilityRows(scores: Record<string, number>) {
   return [
     ['筋力', scores.strength],
@@ -64,7 +66,12 @@ function getSceneResolution(
   const total = sceneState.diceRoll + modifier
 
   return {
-    result: total >= sceneState.judgeResult.difficulty ? '成功' : '失敗',
+    result:
+      total >= sceneState.judgeResult.difficulty
+        ? '成功'
+        : total >= sceneState.judgeResult.difficulty - PARTIAL_SUCCESS_MARGIN
+          ? '代償つき成功'
+          : '失敗',
     summary: sceneState.judgeResult.message,
   }
 }

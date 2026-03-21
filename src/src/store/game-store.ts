@@ -247,7 +247,7 @@ export const useGameStore = create<GameState & GameActions>()(
     }),
     {
       name: GAME_STORE_KEY,
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => window.localStorage),
       partialize: (state) => ({
         selectedClassId: state.selectedClassId,

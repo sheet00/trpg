@@ -115,8 +115,10 @@ export type JudgeResult = {
   difficulty: number | null
   message: string
   success_result: string
+  partial_success_result: string | null
   failure_result: string | null
   hp_change_on_success: number
+  hp_change_on_partial_success: number
   hp_change_on_failure: number
 }
 
@@ -130,7 +132,7 @@ export type StorySceneState = {
   playerAction: string
   judgeResult: JudgeResult | null
   diceRoll: number | null
-  resolvedOutcome: '成功' | '失敗' | '判定不要' | null
+  resolvedOutcome: '成功' | '代償つき成功' | '失敗' | '判定不要' | null
   resolvedResultText: string
   resolvedHpChange: number
 }
@@ -345,7 +347,13 @@ export function getStoredJudgeResult() {
       typeof parsed.message === 'string' &&
       (typeof parsed.ability === 'string' || parsed.ability === null) &&
       (typeof parsed.skill === 'string' || parsed.skill === null) &&
-      (typeof parsed.difficulty === 'number' || parsed.difficulty === null)
+      (typeof parsed.difficulty === 'number' || parsed.difficulty === null) &&
+      typeof parsed.success_result === 'string' &&
+      (typeof parsed.partial_success_result === 'string' || parsed.partial_success_result === null) &&
+      (typeof parsed.failure_result === 'string' || parsed.failure_result === null) &&
+      typeof parsed.hp_change_on_success === 'number' &&
+      typeof parsed.hp_change_on_partial_success === 'number' &&
+      typeof parsed.hp_change_on_failure === 'number'
     ) {
       return parsed as JudgeResult
     }
@@ -402,7 +410,19 @@ function isJudgeResult(value: unknown): value is JudgeResult {
     'skill' in value &&
     (typeof value.skill === 'string' || value.skill === null) &&
     'difficulty' in value &&
-    (typeof value.difficulty === 'number' || value.difficulty === null)
+    (typeof value.difficulty === 'number' || value.difficulty === null) &&
+    'success_result' in value &&
+    typeof value.success_result === 'string' &&
+    'partial_success_result' in value &&
+    (typeof value.partial_success_result === 'string' || value.partial_success_result === null) &&
+    'failure_result' in value &&
+    (typeof value.failure_result === 'string' || value.failure_result === null) &&
+    'hp_change_on_success' in value &&
+    typeof value.hp_change_on_success === 'number' &&
+    'hp_change_on_partial_success' in value &&
+    typeof value.hp_change_on_partial_success === 'number' &&
+    'hp_change_on_failure' in value &&
+    typeof value.hp_change_on_failure === 'number'
   )
 }
 

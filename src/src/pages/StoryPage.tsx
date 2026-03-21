@@ -31,6 +31,7 @@ const abilityLabels = {
 
 const DIFFICULTY_MIN = 5
 const DIFFICULTY_MAX = 20
+const PARTIAL_SUCCESS_MARGIN = 2
 
 function getAbilityRows(scores: Record<string, number>) {
   return [
@@ -74,7 +75,15 @@ function getSceneOutcomeWithScores(sceneState: StorySceneState, abilityScores: R
   const modifier = getAbilityModifier(abilityScores, sceneState.judgeResult.ability)
   const total = sceneState.diceRoll + modifier
 
-  return total >= sceneState.judgeResult.difficulty ? '成功' : '失敗'
+  if (total >= sceneState.judgeResult.difficulty) {
+    return '成功'
+  }
+
+  if (total >= sceneState.judgeResult.difficulty - PARTIAL_SUCCESS_MARGIN) {
+    return '代償つき成功'
+  }
+
+  return '失敗'
 }
 
 function getSceneResolution(sceneState: StorySceneState, abilityScores: Record<string, number>) {
@@ -88,8 +97,10 @@ function getSceneResolution(sceneState: StorySceneState, abilityScores: Record<s
     result: outcome,
     summary: sceneState.judgeResult.message,
     success_result: sceneState.judgeResult.success_result,
+    partial_success_result: sceneState.judgeResult.partial_success_result,
     failure_result: sceneState.judgeResult.failure_result,
     hp_change_on_success: sceneState.judgeResult.hp_change_on_success,
+    hp_change_on_partial_success: sceneState.judgeResult.hp_change_on_partial_success,
     hp_change_on_failure: sceneState.judgeResult.hp_change_on_failure,
     resolved_outcome: sceneState.resolvedOutcome,
     resolved_result_text: sceneState.resolvedResultText,
@@ -109,9 +120,15 @@ function getHpChangeFromResolvedRoll(
   const modifier = getAbilityModifier(abilityScores, judgeResult.ability)
   const total = diceRoll + modifier
 
-  return total >= judgeResult.difficulty
-    ? judgeResult.hp_change_on_success
-    : judgeResult.hp_change_on_failure
+  if (total >= judgeResult.difficulty) {
+    return judgeResult.hp_change_on_success
+  }
+
+  if (total >= judgeResult.difficulty - PARTIAL_SUCCESS_MARGIN) {
+    return judgeResult.hp_change_on_partial_success
+  }
+
+  return judgeResult.hp_change_on_failure
 }
 
 function applyHpChange(baseHp: number, maxHp: number, hpChange: number) {
@@ -149,16 +166,27 @@ function getResolvedOutcomeData(
 
   const modifier = getAbilityModifier(abilityScores, judgeResult.ability)
   const total = diceRoll + modifier
-  const isSuccess = total >= judgeResult.difficulty
+
+  if (total >= judgeResult.difficulty) {
+    return {
+      outcome: '成功' as const,
+      resultText: judgeResult.success_result,
+      hpChange: judgeResult.hp_change_on_success,
+    }
+  }
+
+  if (total >= judgeResult.difficulty - PARTIAL_SUCCESS_MARGIN) {
+    return {
+      outcome: '代償つき成功' as const,
+      resultText: judgeResult.partial_success_result ?? '',
+      hpChange: judgeResult.hp_change_on_partial_success,
+    }
+  }
 
   return {
-    outcome: isSuccess ? ('成功' as const) : ('失敗' as const),
-    resultText: isSuccess
-      ? judgeResult.success_result
-      : (judgeResult.failure_result ?? ''),
-    hpChange: isSuccess
-      ? judgeResult.hp_change_on_success
-      : judgeResult.hp_change_on_failure,
+    outcome: '失敗' as const,
+    resultText: judgeResult.failure_result ?? '',
+    hpChange: judgeResult.hp_change_on_failure,
   }
 }
 
@@ -848,8 +876,10 @@ export function StoryPage() {
                   difficulty: { type: 'integer', nullable: true },
                   message: { type: 'string' },
                   success_result: { type: 'string' },
+                  partial_success_result: { type: ['string', 'null'] },
                   failure_result: { type: ['string', 'null'] },
                   hp_change_on_success: { type: 'integer' },
+                  hp_change_on_partial_success: { type: 'integer' },
                   hp_change_on_failure: { type: 'integer' },
                 },
                 required: [
@@ -859,8 +889,10 @@ export function StoryPage() {
                   'difficulty',
                   'message',
                   'success_result',
+                  'partial_success_result',
                   'failure_result',
                   'hp_change_on_success',
+                  'hp_change_on_partial_success',
                   'hp_change_on_failure',
                 ],
               },
@@ -1084,6 +1116,10 @@ export function StoryPage() {
     totalRoll !== null && difficulty !== null
       ? totalRoll >= difficulty
       : null
+  const isPartialSuccess =
+    totalRoll !== null && difficulty !== null
+      ? totalRoll < difficulty && totalRoll >= difficulty - PARTIAL_SUCCESS_MARGIN
+      : null
 
   return (
     <main className="page-shell px-4" data-theme="light">
@@ -1306,7 +1342,7 @@ export function StoryPage() {
                     <div
                       className={[
                         'mt-4 grid gap-3',
-                        judgeResult.needs_roll ? 'lg:grid-cols-2' : '',
+                        judgeResult.needs_roll ? 'lg:grid-cols-3' : '',
                       ].join(' ')}
                     >
                       <div className="rounded-2xl border border-success/30 bg-success/10 p-4">
@@ -1320,6 +1356,19 @@ export function StoryPage() {
                           </span>
                         </div>
                       </div>
+                      {judgeResult.needs_roll ? (
+                        <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4">
+                          <p className="text-sm uppercase tracking-[0.18em] text-base-content/55">代償つき成功</p>
+                          <p className="mt-2 text-base leading-7 text-base-content">
+                            {judgeResult.partial_success_result ?? '主目的は達成するが、代償が残る。'}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2 text-sm text-base-content/70">
+                            <span className="badge badge-outline border-warning/30 px-3 py-2">
+                              HP {judgeResult.hp_change_on_partial_success >= 0 ? `+${judgeResult.hp_change_on_partial_success}` : judgeResult.hp_change_on_partial_success}
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
                       {judgeResult.needs_roll ? (
                         <div className="rounded-2xl border border-error/30 bg-error/10 p-4">
                           <p className="text-sm uppercase tracking-[0.18em] text-base-content/55">失敗</p>
@@ -1398,7 +1447,7 @@ export function StoryPage() {
                       <div className="stat rounded-xl border border-base-300 bg-base-200/70">
                         <p className="stat-title text-base-content/60">結果</p>
                         <p className="stat-value mt-1 text-lg font-semibold text-neutral">
-                          {isSuccess === null ? '-' : isSuccess ? '成功' : '失敗'}
+                          {isSuccess === null ? '-' : isSuccess ? '成功' : isPartialSuccess ? '代償つき成功' : '失敗'}
                         </p>
                       </div>
                     </div>
