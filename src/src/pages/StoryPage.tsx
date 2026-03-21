@@ -1180,7 +1180,7 @@ export function StoryPage() {
                   選択したアイテム
                 </h2>
                 <p className="mt-2 text-base text-base-content/60">
-                  行動時に使うアイテムを選択してください。
+                  行動時に使うアイテムを選択してください。状況に噛み合えば、展開そのものを動かす鍵になります。
                 </p>
                 <div className="mt-4 flex flex-col gap-3">
                   {sceneItems.map((item) => (
