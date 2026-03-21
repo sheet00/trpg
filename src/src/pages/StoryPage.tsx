@@ -10,7 +10,6 @@ import scene5Prompt from '../assets/15_scene_5.md?raw'
 import { PageHeader } from '../components/PageHeader'
 import { characterClasses } from '../data/classes'
 import {
-  createEmptyStorySceneState,
   type JudgeResult,
   type SelectedItem,
   type StoryScene,
@@ -364,6 +363,9 @@ export function StoryPage() {
         playerAction: previousSceneState.playerAction,
         judgeResult: previousSceneState.judgeResult,
         diceRoll: previousSceneState.diceRoll,
+        resolvedOutcome: previousSceneState.resolvedOutcome,
+        resolvedResultText: previousSceneState.resolvedResultText,
+        resolvedHpChange: previousSceneState.resolvedHpChange,
       }
 
       const hasLegacyState =
