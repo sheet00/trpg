@@ -75,6 +75,42 @@ function getModifier(score: number) {
   return Math.floor((score - 10) / 2)
 }
 
+function isDefaultScores(scores: AbilityScores) {
+  return abilityDefinitions.every((ability) => scores[ability.key] === defaultAbilityScores[ability.key])
+}
+
+function createRandomScores() {
+  const nextScores = { ...defaultAbilityScores }
+  let remainingPoints = 27
+
+  while (remainingPoints > 0) {
+    const upgradableAbilities = abilityDefinitions.filter((ability) => {
+      const currentScore = nextScores[ability.key]
+      if (currentScore >= 15) {
+        return false
+      }
+
+      const nextScore = currentScore + 1
+      return getScoreCost(nextScore) - getScoreCost(currentScore) <= remainingPoints
+    })
+
+    if (upgradableAbilities.length === 0) {
+      break
+    }
+
+    const selectedAbility =
+      upgradableAbilities[Math.floor(Math.random() * upgradableAbilities.length)]
+    const currentScore = nextScores[selectedAbility.key]
+    const nextScore = currentScore + 1
+    const cost = getScoreCost(nextScore) - getScoreCost(currentScore)
+
+    nextScores[selectedAbility.key] = nextScore
+    remainingPoints -= cost
+  }
+
+  return nextScores
+}
+
 export function AbilityScoresPage() {
   const navigate = useNavigate()
   const selectedClassId = useGameStore((state) => state.selectedClassId)
@@ -82,7 +118,9 @@ export function AbilityScoresPage() {
   const resetGame = useGameStore((state) => state.resetGame)
   const setAbilityScores = useGameStore((state) => state.setAbilityScores)
   const selectedJob = characterClasses.find((job) => job.id === selectedClassId)
-  const [scores, setScores] = useState(() => storedScores)
+  const [scores, setScores] = useState(() =>
+    isDefaultScores(storedScores) ? createRandomScores() : storedScores,
+  )
 
   useEffect(() => {
     setAbilityScores(scores)
@@ -106,6 +144,10 @@ export function AbilityScoresPage() {
 
   const handleReset = () => {
     setScores(defaultAbilityScores)
+  }
+
+  const handleRandomize = () => {
+    setScores(createRandomScores())
   }
 
   const handleRestart = () => {
@@ -193,7 +235,14 @@ export function AbilityScoresPage() {
           })}
         </section>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleRandomize}
+          >
+            ランダム
+          </button>
           <button
             type="button"
             className="btn btn-outline btn-secondary"
