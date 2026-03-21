@@ -3,6 +3,8 @@ interface Env {
   OPENROUTER_API_KEY?: string;
 }
 
+const DEFAULT_MAX_TOKENS = 2000;
+
 type ChatMessage = {
   role: string;
   content: string;
@@ -14,6 +16,7 @@ type ChatCompletionRequest = {
   response_format?: unknown;
   tools?: unknown[];
   tool_choice?: unknown;
+  max_tokens?: number;
 };
 
 const corsHeaders = {
@@ -110,6 +113,7 @@ export default {
     const requestBody: any = {
       model,
       messages: payload.messages,
+      max_tokens: payload.max_tokens ?? DEFAULT_MAX_TOKENS,
     };
 
     if (payload.response_format) requestBody.response_format = payload.response_format;

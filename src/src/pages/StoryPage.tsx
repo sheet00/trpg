@@ -30,6 +30,9 @@ const abilityLabels = {
   charisma: '魅力',
 } as const
 
+const DIFFICULTY_MIN = 5
+const DIFFICULTY_MAX = 20
+
 function getAbilityRows(scores: Record<string, number>) {
   return [
     ['筋力', scores.strength],
@@ -158,6 +161,14 @@ function getResolvedOutcomeData(
       ? judgeResult.hp_change_on_success
       : judgeResult.hp_change_on_failure,
   }
+}
+
+function getDifficultyGaugeValue(difficulty: number | null) {
+  if (difficulty === null) {
+    return null
+  }
+
+  return Math.max(DIFFICULTY_MIN, Math.min(DIFFICULTY_MAX, difficulty))
 }
 
 function getSceneDirectionPrompt(sceneNumber: number) {
@@ -1056,6 +1067,7 @@ export function StoryPage() {
   const isConfirmActionDisabled = isJudgeLoading || isPlayerActionEmpty || !generatedScene
   const canAdvanceScene = judgeResult !== null && (!judgeResult.needs_roll || diceRoll !== null)
   const difficulty = judgeResult?.difficulty ?? null
+  const difficultyGaugeValue = getDifficultyGaugeValue(difficulty)
   const isSuccess =
     totalRoll !== null && difficulty !== null
       ? totalRoll >= difficulty
@@ -1247,17 +1259,33 @@ export function StoryPage() {
                       {judgeResult.message}
                     </p>
                     {judgeResult.needs_roll ? (
-                      <div className="mt-3 flex flex-wrap gap-3 text-base text-base-content">
-                        <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
-                          能力値: {abilityLabels[judgeResult.ability as keyof typeof abilityLabels] || judgeResult.ability}
-                        </span>
-                        <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
-                          技能: {judgeResult.skill}
-                        </span>
-                        <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
-                          難易度: {judgeResult.difficulty}
-                        </span>
-                      </div>
+                      <>
+                        <div className="mt-3 flex flex-wrap gap-3 text-base text-base-content">
+                          <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
+                            能力値: {abilityLabels[judgeResult.ability as keyof typeof abilityLabels] || judgeResult.ability}
+                          </span>
+                          <span className="badge badge-outline h-auto border-base-300 px-3 py-2">
+                            技能: {judgeResult.skill}
+                          </span>
+                        </div>
+                        <div className="mt-4 rounded-2xl border border-base-300 bg-base-200/60 p-4">
+                          <div className="flex items-center justify-between gap-4 text-sm text-base-content/70">
+                            <span>難易度</span>
+                            <strong className="text-base text-neutral">
+                              {judgeResult.difficulty}
+                            </strong>
+                          </div>
+                          <progress
+                            className="progress progress-secondary mt-3 w-full"
+                            value={difficultyGaugeValue ?? DIFFICULTY_MIN}
+                            max={DIFFICULTY_MAX}
+                          />
+                          <div className="mt-2 flex items-center justify-between text-xs tracking-[0.12em] text-base-content/50">
+                            <span>{DIFFICULTY_MIN}</span>
+                            <span>{DIFFICULTY_MAX}</span>
+                          </div>
+                        </div>
+                      </>
                     ) : (
                       <p className="mt-3 text-base text-base-content/60">
                         判定不要
