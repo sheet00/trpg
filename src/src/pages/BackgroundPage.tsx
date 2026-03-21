@@ -81,7 +81,7 @@ export function BackgroundPage() {
       `テーマの雰囲気: ${selectedTheme.vibe}`,
       `能力値: ${[
         `筋力 ${abilityScores.strength}`,
-        `敏捷 ${abilityScores.dexterity}`,
+        `素早さ ${abilityScores.dexterity}`,
         `耐久 ${abilityScores.constitution}`,
         `知力 ${abilityScores.intelligence}`,
         `判断力 ${abilityScores.wisdom}`,
@@ -208,7 +208,7 @@ export function BackgroundPage() {
         `テーマの雰囲気: ${selectedTheme.vibe}`,
         `能力値: ${[
           `筋力 ${abilityScores.strength}`,
-          `敏捷 ${abilityScores.dexterity}`,
+          `素早さ ${abilityScores.dexterity}`,
           `耐久 ${abilityScores.constitution}`,
           `知力 ${abilityScores.intelligence}`,
           `判断力 ${abilityScores.wisdom}`,
@@ -328,7 +328,7 @@ export function BackgroundPage() {
           <p>
             能力値: {[
               `筋力 ${abilityScores.strength}`,
-              `敏捷 ${abilityScores.dexterity}`,
+              `素早さ ${abilityScores.dexterity}`,
               `耐久 ${abilityScores.constitution}`,
               `知力 ${abilityScores.intelligence}`,
               `判断力 ${abilityScores.wisdom}`,

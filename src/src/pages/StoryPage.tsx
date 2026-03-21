@@ -23,7 +23,7 @@ const IS_DEV = import.meta.env.DEV
 
 const abilityLabels = {
   strength: '筋力',
-  dexterity: '敏捷',
+  dexterity: '素早さ',
   constitution: '耐久',
   intelligence: '知力',
   wisdom: '判断力',
@@ -36,7 +36,7 @@ const DIFFICULTY_MAX = 20
 function getAbilityRows(scores: Record<string, number>) {
   return [
     ['筋力', scores.strength],
-    ['敏捷', scores.dexterity],
+    ['素早さ', scores.dexterity],
     ['耐久', scores.constitution],
     ['知力', scores.intelligence],
     ['判断力', scores.wisdom],

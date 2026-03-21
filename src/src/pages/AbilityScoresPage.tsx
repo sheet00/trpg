@@ -30,7 +30,7 @@ const abilityDefinitions: Array<{
   },
   {
     key: 'dexterity',
-    label: '敏捷',
+    label: '素早さ',
     short: 'DEX',
     description: '回避、先制、隠密、遠隔攻撃に関わる。',
   },

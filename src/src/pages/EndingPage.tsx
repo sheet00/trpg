@@ -15,7 +15,7 @@ import { formatTextWithLineBreaks } from '../lib/text-utils'
 function getAbilityRows(scores: Record<string, number>) {
   return [
     ['筋力', scores.strength],
-    ['敏捷', scores.dexterity],
+    ['素早さ', scores.dexterity],
     ['耐久', scores.constitution],
     ['知力', scores.intelligence],
     ['判断力', scores.wisdom],
