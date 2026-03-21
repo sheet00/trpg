@@ -76,11 +76,11 @@ export function BackgroundPage() {
     navigate('/', { replace: true })
   }
 
-  if (!selectedJob) {
-    return <Navigate to="/class-select" replace />
-  }
-
   const handleGenerate = async () => {
+    if (!selectedJob) {
+      return
+    }
+
     if (isGeneratingRef.current) return
     isGeneratingRef.current = true
     setIsLoading(true)
@@ -168,7 +168,7 @@ export function BackgroundPage() {
   }
 
   const handleStartStory = () => {
-    if (selectedItemIds.length === 0 || !generatedBackground) {
+    if (!selectedJob || selectedItemIds.length === 0 || !generatedBackground) {
       return
     }
 
@@ -199,8 +199,84 @@ export function BackgroundPage() {
     }
 
     setHasAttemptedAutoGenerate(true)
-    void handleGenerate()
-  }, [generatedBackground, hasAttemptedAutoGenerate, isLoading, storedBackgroundData])
+    void (async () => {
+      if (!selectedJob || isGeneratingRef.current) return
+      isGeneratingRef.current = true
+      setIsLoading(true)
+      setErrorMessage('')
+
+      const userPrompt = [
+        '確定済みキャラクター情報を渡します。',
+        `クラス: ${selectedJob.name}`,
+        `能力値: ${formatAbilityScores()}`,
+        'これはゲーム全体の最初のイントロです。',
+        'プレイヤーはいま最初のアイテム選択を行う直前にいます。',
+        'ストーリーが始まるのは次のシーンです。',
+        'この情報を前提に、立場と状況の提示、およびアイテム候補を生成してください。',
+        'ここではストーリーを開始せず、冒険直前の準備段階で止めてください。',
+      ].join('\n')
+
+      try {
+        const parsed = await postChatCompletion<GeneratedBackground>({
+          messages: [
+            { role: 'system', content: startPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          tools: [
+            {
+              type: 'function',
+              function: {
+                name: 'generate_background',
+                description: 'TRPGの背景設定と初期アイテム候補を生成します。',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    intro_title: { type: 'string' },
+                    intro_text: { type: 'string' },
+                    item_candidates: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string' },
+                          name: { type: 'string' },
+                          description: { type: 'string' },
+                          category: { type: 'string' },
+                        },
+                        required: ['id', 'name', 'description', 'category'],
+                      },
+                    },
+                  },
+                  required: ['intro_title', 'intro_text', 'item_candidates'],
+                },
+              },
+            },
+          ],
+          tool_choice: { type: 'function', function: { name: 'generate_background' } },
+        })
+
+        setGeneratedBackground(parsed)
+        setStoredBackgroundData({
+          intro_title: parsed.intro_title,
+          intro_text: parsed.intro_text,
+          item_candidates: parsed.item_candidates,
+        })
+        setSelectedItemIds([])
+        setStoredBackgroundSelection([])
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : '生成中に不明なエラーが発生しました。',
+        )
+      } finally {
+        setIsLoading(false)
+        isGeneratingRef.current = false
+      }
+    })()
+  }, [generatedBackground, hasAttemptedAutoGenerate, isLoading, selectedJob, storedBackgroundData])
+
+  if (!selectedJob) {
+    return <Navigate to="/class-select" replace />
+  }
 
   return (
     <main className="page-shell" data-theme="light">

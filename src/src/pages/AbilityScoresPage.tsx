@@ -91,10 +91,6 @@ export function AbilityScoresPage() {
     setStoredAbilityScores(scores)
   }, [scores])
 
-  if (!selectedJob) {
-    return <Navigate to="/class-select" replace />
-  }
-
   const totalPoints = getTotalCost(scores)
   const remainingPoints = 27 - totalPoints
 
@@ -123,6 +119,10 @@ export function AbilityScoresPage() {
   useEffect(() => {
     document.title = '能力値 | TRPG'
   }, [])
+
+  if (!selectedJob) {
+    return <Navigate to="/class-select" replace />
+  }
 
   return (
     <main className="page-shell" data-theme="light">

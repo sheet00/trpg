@@ -77,7 +77,7 @@ export async function postChatCompletion<T>(
   let responseData: ChatCompletionResponse;
   try {
     responseData = JSON.parse(responseText);
-  } catch (e) {
+  } catch {
     throw new Error(
       `サーバーからのレスポンスがJSON形式ではありません。(Status: ${response.status})\nRequest: ${method} ${url}\n\n【レスポンス内容】\n${responseText}`,
     );
