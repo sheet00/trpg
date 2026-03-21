@@ -81,7 +81,32 @@ function getSceneResolution(sceneState: StorySceneState, abilityScores: Record<s
   return {
     result: outcome,
     summary: sceneState.judgeResult.message,
+    success_result: sceneState.judgeResult.success_result,
+    failure_result: sceneState.judgeResult.failure_result,
+    hp_change_on_success: sceneState.judgeResult.hp_change_on_success,
+    hp_change_on_failure: sceneState.judgeResult.hp_change_on_failure,
   }
+}
+
+function getHpChangeFromResolvedRoll(
+  judgeResult: JudgeResult | null,
+  abilityScores: Record<string, number>,
+  diceRoll: number | null,
+) {
+  if (!judgeResult?.needs_roll || diceRoll === null || judgeResult.difficulty === null) {
+    return 0
+  }
+
+  const modifier = getAbilityModifier(abilityScores, judgeResult.ability)
+  const total = diceRoll + modifier
+
+  return total >= judgeResult.difficulty
+    ? judgeResult.hp_change_on_success
+    : judgeResult.hp_change_on_failure
+}
+
+function applyHpChange(baseHp: number, maxHp: number, hpChange: number) {
+  return Math.max(0, Math.min(maxHp, baseHp + hpChange))
 }
 
 export function StoryPage() {
@@ -683,8 +708,22 @@ export function StoryPage() {
                   skill: { type: 'string', nullable: true },
                   difficulty: { type: 'integer', nullable: true },
                   message: { type: 'string' },
+                  success_result: { type: 'string' },
+                  failure_result: { type: ['string', 'null'] },
+                  hp_change_on_success: { type: 'integer' },
+                  hp_change_on_failure: { type: 'integer' },
                 },
-                required: ['needs_roll', 'ability', 'skill', 'difficulty', 'message'],
+                required: [
+                  'needs_roll',
+                  'ability',
+                  'skill',
+                  'difficulty',
+                  'message',
+                  'success_result',
+                  'failure_result',
+                  'hp_change_on_success',
+                  'hp_change_on_failure',
+                ],
               },
             },
           },
@@ -716,10 +755,25 @@ export function StoryPage() {
       return
     }
 
-    persistSceneState((sceneState) => ({
-      ...sceneState,
-      diceRoll: rollingValue,
-    }))
+    persistSceneState((sceneState) => {
+      const previousHpChange = getHpChangeFromResolvedRoll(
+        sceneState.judgeResult,
+        abilityScores,
+        sceneState.diceRoll,
+      )
+      const baseHp = applyHpChange(sceneState.currentHp, sceneState.maxHp, -previousHpChange)
+      const nextHpChange = getHpChangeFromResolvedRoll(
+        sceneState.judgeResult,
+        abilityScores,
+        rollingValue,
+      )
+
+      return {
+        ...sceneState,
+        diceRoll: rollingValue,
+        currentHp: applyHpChange(baseHp, sceneState.maxHp, nextHpChange),
+      }
+    })
   }
 
   const handleRerollDice = () => {
@@ -728,10 +782,25 @@ export function StoryPage() {
     }
 
     const rerolledValue = Math.floor(Math.random() * 20) + 1
-    persistSceneState((sceneState) => ({
-      ...sceneState,
-      diceRoll: rerolledValue,
-    }))
+    persistSceneState((sceneState) => {
+      const previousHpChange = getHpChangeFromResolvedRoll(
+        sceneState.judgeResult,
+        abilityScores,
+        sceneState.diceRoll,
+      )
+      const baseHp = applyHpChange(sceneState.currentHp, sceneState.maxHp, -previousHpChange)
+      const nextHpChange = getHpChangeFromResolvedRoll(
+        sceneState.judgeResult,
+        abilityScores,
+        rerolledValue,
+      )
+
+      return {
+        ...sceneState,
+        diceRoll: rerolledValue,
+        currentHp: applyHpChange(baseHp, sceneState.maxHp, nextHpChange),
+      }
+    })
   }
 
   const handleNextScene = () => {
@@ -999,6 +1068,37 @@ export function StoryPage() {
                         判定不要
                       </p>
                     )}
+                    <div
+                      className={[
+                        'mt-4 grid gap-3',
+                        judgeResult.needs_roll ? 'lg:grid-cols-2' : '',
+                      ].join(' ')}
+                    >
+                      <div className="rounded-2xl border border-success/30 bg-success/10 p-4">
+                        <p className="text-sm uppercase tracking-[0.18em] text-base-content/55">成功</p>
+                        <p className="mt-2 text-base leading-7 text-base-content">
+                          {judgeResult.success_result}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2 text-sm text-base-content/70">
+                          <span className="badge badge-outline border-success/30 px-3 py-2">
+                            HP {judgeResult.hp_change_on_success >= 0 ? `+${judgeResult.hp_change_on_success}` : judgeResult.hp_change_on_success}
+                          </span>
+                        </div>
+                      </div>
+                      {judgeResult.needs_roll ? (
+                        <div className="rounded-2xl border border-error/30 bg-error/10 p-4">
+                          <p className="text-sm uppercase tracking-[0.18em] text-base-content/55">失敗</p>
+                          <p className="mt-2 text-base leading-7 text-base-content">
+                            {judgeResult.failure_result ?? '失敗分岐はありません。'}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2 text-sm text-base-content/70">
+                            <span className="badge badge-outline border-error/30 px-3 py-2">
+                              HP {judgeResult.hp_change_on_failure >= 0 ? `+${judgeResult.hp_change_on_failure}` : judgeResult.hp_change_on_failure}
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               ) : null}

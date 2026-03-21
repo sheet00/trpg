@@ -91,6 +91,10 @@ export type JudgeResult = {
   skill: string | null
   difficulty: number | null
   message: string
+  success_result: string
+  failure_result: string | null
+  hp_change_on_success: number
+  hp_change_on_failure: number
 }
 
 export type StorySceneState = {
